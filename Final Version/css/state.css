@@ -1,0 +1,87 @@
+/* ================================================================
+   STATE BOX (empty / loading)
+   ================================================================ */
+.state-box {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  color: var(--text-dim);
+  font-family: var(--mono);
+  font-size: 12.5px;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  min-height: 200px;
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 55% 35% at 50% 50%, rgba(91, 156, 246, 0.025) 0%, transparent 70%);
+}
+
+/* Animated corner accents */
+.state-box::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 12px;
+  background:
+    linear-gradient(135deg, rgba(91, 156, 246, 0.08) 0%, transparent 50%),
+    linear-gradient(315deg, rgba(167, 139, 250, 0.06) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.state-icon {
+  font-size: 38px;
+  opacity: 0.2;
+  animation: floatIcon 3.5s ease-in-out infinite;
+}
+
+@keyframes floatIcon {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+    opacity: 0.20;
+  }
+
+  50% {
+    transform: translateY(-6px);
+    opacity: 0.28;
+  }
+}
+
+/* ── Spinner ── */
+.spinner {
+  width: 30px;
+  height: 30px;
+  border: 2px solid var(--border-accent);
+  border-top-color: var(--accent);
+  border-right-color: rgba(91, 156, 246, 0.35);
+  border-radius: 50%;
+  animation: spin 0.62s linear infinite;
+  box-shadow: 0 0 14px rgba(91, 156, 246, 0.22);
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── Error box ── */
+.err-box {
+  background: rgba(255, 107, 114, 0.06);
+  border: 1px solid rgba(255, 107, 114, 0.28);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--red);
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  box-shadow: 0 0 20px rgba(255, 107, 114, 0.06);
+}
+

@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PO Database Query</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0d0f14;
+      --surface: #13161d;
+      --surface2: #1a1e28;
+      --border: #252a38;
+      --border-accent: #3a4258;
+      --text: #e2e6f0;
+      --text-muted: #6b7494;
+      --text-dim: #3d4560;
+      --accent: #4f9cf9;
+      --accent-glow: rgba(79,156,249,0.15);
+      --green: #3ecf8e;
+      --green-glow: rgba(62,207,142,0.12);
+      --red: #f66;
+      --red-glow: rgba(255,102,102,0.12);
+      --yellow: #f0c060;
+      --purple: #a78bfa;
+      --purple-glow: rgba(167,139,250,0.12);
+      --orange: #fb923c;
+      --orange-glow: rgba(251,146,60,0.12);
+      --teal: #2dd4bf;
+      --teal-glow: rgba(45,212,191,0.12);
+      --mono: 'IBM Plex Mono', monospace;
+      --sans: 'IBM Plex Sans', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: linear-gradient(rgba(79,156,249,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(79,156,249,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .layout {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: 270px 1fr;
+      grid-template-rows: 56px 1fr;
+      height: 100vh;
+    }
+
+    /* HEADER */
+    header {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 0 24px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .logo { display: flex; align-items: center; gap: 10px; }
+    .logo-icon { width: 28px; height: 28px; background: var(--accent); border-radius: 6px; display: grid; place-items: center; font-size: 14px; }
+    .logo-text { font-family: var(--mono); font-size: 13px; font-weight: 600; letter-spacing: 0.08em; }
+    .header-divider { width: 1px; height: 24px; background: var(--border); margin: 0 8px; }
+    .header-sub { font-family: var(--mono); font-size: 11px; color: var(--text-muted); letter-spacing: 0.05em; }
+    .status-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--green); box-shadow: 0 0 6px var(--green);
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+    /* SIDEBAR */
+    aside {
+      border-right: 1px solid var(--border);
+      background: var(--surface);
+      padding: 20px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      overflow-y: auto;
+    }
+    .sidebar-section-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      color: var(--text-dim);
+      padding: 12px 20px 6px;
+      text-transform: uppercase;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 20px;
+      cursor: pointer;
+      border-left: 2px solid transparent;
+      transition: all 0.15s;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    .nav-item:hover { background: var(--surface2); color: var(--text); }
+    .nav-item.active-search  { border-left-color: var(--accent);  background: var(--accent-glow);  color: var(--accent); }
+    .nav-item.active-list    { border-left-color: var(--red);     background: var(--red-glow);     color: var(--red); }
+    .nav-item.active-count   { border-left-color: var(--purple);  background: var(--purple-glow);  color: var(--purple); }
+    .nav-item.active-update  { border-left-color: var(--orange);  background: var(--orange-glow);  color: var(--orange); }
+    .nav-item.active-compare { border-left-color: var(--teal);    background: var(--teal-glow);    color: var(--teal); }
+    .nav-icon { font-family: var(--mono); font-size: 13px; width: 18px; text-align: center; }
+    .nav-badge {
+      margin-left: auto;
+      font-family: var(--mono);
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 3px;
+      background: var(--surface2);
+      color: var(--text-muted);
+    }
+
+    /* MAIN */
+    main { display: flex; flex-direction: column; overflow: hidden; }
+    .query-bar { padding: 20px 28px 0; display: flex; flex-direction: column; gap: 12px; }
+    .query-bar-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; color: var(--text-dim); text-transform: uppercase; }
+    .query-row { display: flex; gap: 10px; align-items: center; }
+    .po-input-wrap { position: relative; flex: 1; max-width: 480px; }
+    .po-prefix { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-family: var(--mono); font-size: 12px; color: var(--text-dim); pointer-events: none; }
+    .po-input {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 11px 16px 11px 80px;
+      font-family: var(--mono);
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      letter-spacing: 0.05em;
+    }
+    .po-input::placeholder { color: var(--text-dim); font-weight: 400; }
+    .po-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+    .run-btn {
+      padding: 10px 22px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .run-btn:hover { background: #6aabff; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(79,156,249,0.3); }
+    .run-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    /* SQL Preview */
+    .sql-preview { margin: 0 28px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+    .sql-preview-header { display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-bottom: 1px solid var(--border); background: var(--surface2); }
+    .sql-preview-title { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; color: var(--text-dim); text-transform: uppercase; margin-left: 8px; }
+    .sql-preview-body { padding: 12px 16px; font-family: var(--mono); font-size: 11.5px; line-height: 1.7; color: #8899cc; white-space: pre-wrap; word-break: break-all; max-height: 120px; overflow-y: auto; }
+    .sql-kw { color: #7b9ef0; }
+    .sql-val { color: var(--yellow); }
+    .sql-fn { color: var(--green); }
+
+    /* Results */
+    .results-area { flex: 1; padding: 16px 28px 24px; overflow: hidden; display: flex; flex-direction: column; gap: 12px; min-height: 0; }
+    .results-meta { display: flex; align-items: center; gap: 16px; }
+    .results-count { font-family: var(--mono); font-size: 12px; color: var(--text-muted); }
+    .results-count strong { color: var(--text); font-weight: 600; }
+    .tag { font-family: var(--mono); font-size: 10px; padding: 3px 8px; border-radius: 4px; border: 1px solid; letter-spacing: 0.05em; }
+    .tag-search  { border-color: var(--accent);  color: var(--accent);  background: var(--accent-glow); }
+    .tag-list    { border-color: var(--red);     color: var(--red);     background: var(--red-glow); }
+    .tag-count   { border-color: var(--purple);  color: var(--purple);  background: var(--purple-glow); }
+    .tag-update  { border-color: var(--orange);  color: var(--orange);  background: var(--orange-glow); }
+    .tag-compare { border-color: var(--teal);    color: var(--teal);    background: var(--teal-glow); }
+    .tag-ok      { border-color: var(--green);   color: var(--green);   background: var(--green-glow); }
+
+    /* Table */
+    .table-wrap { flex: 1; overflow: auto; border: 1px solid var(--border); border-radius: 8px; min-height: 0; }
+    table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 11.5px; }
+    thead th {
+      position: sticky; top: 0;
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 14px;
+      text-align: left;
+      font-weight: 600;
+      letter-spacing: 0.07em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-size: 10px;
+      white-space: nowrap;
+      z-index: 2;
+    }
+    /* Compare table: group headers */
+    .th-group-staging { background: rgba(79,156,249,0.08); color: var(--accent) !important; border-bottom: 1px solid rgba(79,156,249,0.2) !important; text-align: center !important; }
+    .th-group-ax      { background: rgba(167,139,250,0.08); color: var(--purple) !important; border-bottom: 1px solid rgba(167,139,250,0.2) !important; text-align: center !important; }
+    .th-group-diff    { background: rgba(45,212,191,0.08);  color: var(--teal)   !important; border-bottom: 1px solid rgba(45,212,191,0.2)  !important; text-align: center !important; }
+    .th-group-base    { background: var(--surface2); }
+
+    tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: var(--surface2); }
+    tbody td { padding: 9px 14px; color: var(--text); white-space: nowrap; vertical-align: middle; }
+    .td-dim { color: var(--text-muted); }
+    .num { color: var(--yellow); }
+
+    /* Compare row highlight */
+    tr.row-mismatch { background: rgba(255,102,102,0.04); }
+    tr.row-match    { background: rgba(62,207,142,0.02); }
+    tr.row-only-staging { background: rgba(79,156,249,0.04); }
+    tr.row-only-ax      { background: rgba(167,139,250,0.04); }
+
+    .diff-ok      { color: var(--green); font-weight: 600; }
+    .diff-bad     { color: var(--red);   font-weight: 600; }
+    .diff-missing { color: var(--text-muted); font-style: italic; }
+    .diff-zero    { color: var(--text-dim); }
+
+    .match-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 7px; border-radius: 3px; font-size: 10px; font-weight: 600;
+    }
+    .match-ok      { background: var(--green-glow); color: var(--green); border: 1px solid rgba(62,207,142,0.25); }
+    .match-bad     { background: var(--red-glow);   color: var(--red);   border: 1px solid rgba(255,102,102,0.25); }
+    .match-staging { background: var(--accent-glow); color: var(--accent); border: 1px solid rgba(79,156,249,0.25); }
+    .match-ax      { background: var(--purple-glow); color: var(--purple); border: 1px solid rgba(167,139,250,0.25); }
+
+    .transfer-badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; }
+    .transfer-ok      { background: var(--green-glow); color: var(--green); border: 1px solid rgba(62,207,142,0.25); }
+    .transfer-error   { background: var(--red-glow);   color: var(--red);   border: 1px solid rgba(255,102,102,0.25); }
+    .transfer-pending { background: rgba(240,192,96,0.1); color: var(--yellow); border: 1px solid rgba(240,192,96,0.25); }
+
+    .posted-yes { background: var(--green-glow); color: var(--green); border: 1px solid rgba(62,207,142,0.25); padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; }
+    .posted-no  { background: var(--red-glow);   color: var(--red);   border: 1px solid rgba(255,102,102,0.25); padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; }
+
+    /* State boxes */
+    .state-box {
+      flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 12px; color: var(--text-dim); font-family: var(--mono); font-size: 13px;
+      border: 1px dashed var(--border); border-radius: 8px; min-height: 200px;
+    }
+    .state-icon { font-size: 32px; opacity: 0.4; }
+    .spinner { width: 28px; height: 28px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .err-box { background: var(--red-glow); border: 1px solid rgba(255,102,102,0.25); border-radius: 8px; padding: 14px 18px; font-family: var(--mono); font-size: 12px; color: var(--red); display: flex; gap: 10px; align-items: flex-start; }
+
+    /* Summary cards */
+    .summary-row { display: flex; gap: 10px; flex-shrink: 0; }
+    .summary-card { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; display: flex; flex-direction: column; gap: 4px; }
+    .summary-card.highlight-match   { border-color: rgba(62,207,142,0.4);  background: rgba(62,207,142,0.04); }
+    .summary-card.highlight-mismatch{ border-color: rgba(255,102,102,0.4); background: rgba(255,102,102,0.04); }
+    .summary-label { font-family: var(--mono); font-size: 10px; color: var(--text-dim); letter-spacing: 0.08em; text-transform: uppercase; }
+    .summary-sub   { font-family: var(--mono); font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+    .summary-value { font-family: var(--mono); font-size: 20px; font-weight: 600; color: var(--text); }
+    .summary-value.green  { color: var(--green); }
+    .summary-value.red    { color: var(--red); }
+    .summary-value.blue   { color: var(--accent); }
+    .summary-value.purple { color: var(--purple); }
+    .summary-value.orange { color: var(--orange); }
+    .summary-value.teal   { color: var(--teal); }
+    .summary-value.small  { font-size: 14px; }
+
+    /* Compare section divider */
+    .compare-section-header {
+      display: flex; align-items: center; gap: 12px;
+      font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em;
+      color: var(--text-dim); text-transform: uppercase; margin-bottom: 4px;
+    }
+    .compare-section-header::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    /* Config modal */
+    .config-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 100; align-items: center; justify-content: center; }
+    .config-modal.open { display: flex; }
+    .config-panel { background: var(--surface); border: 1px solid var(--border-accent); border-radius: 12px; width: 520px; max-width: 90vw; padding: 28px; display: flex; flex-direction: column; gap: 20px; animation: fadeUp 0.2s ease; }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+    .config-title { font-family: var(--mono); font-size: 13px; font-weight: 600; letter-spacing: 0.06em; color: var(--text); display: flex; align-items: center; gap: 8px; }
+    .config-close { margin-left: auto; background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 18px; }
+    .field-group { display: flex; flex-direction: column; gap: 6px; }
+    .field-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; color: var(--text-muted); text-transform: uppercase; }
+    .field-input { background: var(--surface2); border: 1px solid var(--border); border-radius: 7px; padding: 10px 14px; font-family: var(--mono); font-size: 13px; color: var(--text); outline: none; width: 100%; transition: border-color 0.15s; }
+    .field-input:focus { border-color: var(--accent); }
+    .field-input::placeholder { color: var(--text-dim); }
+    .config-note { font-size: 11px; color: var(--text-muted); font-family: var(--mono); background: var(--surface2); border-radius: 6px; padding: 10px 14px; line-height: 1.6; border: 1px solid var(--border); }
+    .config-note code { color: var(--accent); }
+    .save-btn { padding: 10px; background: var(--accent); border: none; border-radius: 8px; color: #fff; font-family: var(--mono); font-size: 13px; font-weight: 600; cursor: pointer; }
+    .save-btn:hover { background: #6aabff; }
+
+    /* History */
+    .history-item { padding: 8px 20px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 12px; color: var(--text-muted); transition: background 0.1s; }
+    .history-item:hover { background: var(--surface2); color: var(--text); }
+    .history-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--text-dim); flex-shrink: 0; }
+    .history-dot.search  { background: var(--accent); }
+    .history-dot.list    { background: var(--red); }
+    .history-dot.count   { background: var(--purple); }
+    .history-dot.update  { background: var(--orange); }
+    .history-dot.compare { background: var(--teal); }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-accent); border-radius: 3px; }
+  </style>
+</head>
+
+<body>
+  <div class="layout">
+
+    <!-- HEADER -->
+    <header>
+      <div class="logo">
+        <div class="logo-icon">⬡</div>
+        <span class="logo-text">PO · QUERY</span>
+      </div>
+      <div class="header-divider"></div>
+      <span class="header-sub">DMFPURCHLINEENTITY / MSSQL</span>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:16px;">
+        <button onclick="openConfig()" style="background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);font-family:var(--mono);font-size:11px;padding:5px 12px;border-radius:6px;cursor:pointer;letter-spacing:0.06em;">⚙ CONFIG</button>
+        <div style="display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;color:var(--green);">
+          <div class="status-dot"></div><span>READY</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- SIDEBAR -->
+    <aside>
+      <div class="sidebar-section-label">Query Mode</div>
+      <div class="nav-item active-search" id="nav-search" onclick="setMode('search')">
+        <span class="nav-icon">⌕</span> Search PO (Staging)
+        <span class="nav-badge" id="badge-search">—</span>
+      </div>
+      <div class="nav-item" id="nav-list" onclick="setMode('list')">
+        <span class="nav-icon">!</span> Error PO
+        <span class="nav-badge" id="badge-list">—</span>
+      </div>
+      <div class="nav-item" id="nav-count" onclick="setMode('count')">
+        <span class="nav-icon">≡</span> PO Line (AX)
+        <span class="nav-badge" id="badge-count">—</span>
+      </div>
+      <div class="nav-item" id="nav-update" onclick="setMode('update')">
+        <span class="nav-icon">⊞</span> Pack / Roll
+        <span class="nav-badge" id="badge-update">—</span>
+      </div>
+      <div class="nav-item" id="nav-compare" onclick="setMode('compare')">
+        <span class="nav-icon">⇄</span> Compare PO
+        <span class="nav-badge" id="badge-compare">—</span>
+      </div>
+
+      <div class="sidebar-section-label" style="margin-top:12px;">History</div>
+      <div id="history-list"></div>
+
+      <div style="margin-top:auto;padding:16px 20px;border-top:1px solid var(--border);">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);line-height:1.8;">
+          WEBHOOK ENDPOINT<br>
+          <span id="endpoint-display" style="color:var(--text-muted);word-break:break-all;">Not configured</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main>
+      <div class="query-bar">
+        <div class="query-bar-label">Purchase Order Number</div>
+        <div class="query-row">
+          <div class="po-input-wrap">
+            <span class="po-prefix">PO_ID ›</span>
+            <input class="po-input" id="po-input" type="text" placeholder="e.g. CDHN26HTI020034"
+              autocomplete="off" spellcheck="false" onkeydown="if(event.key==='Enter') runQuery()" />
+          </div>
+          <button class="run-btn" id="run-btn" onclick="runQuery()">▶ RUN</button>
+        </div>
+      </div>
+
+      <div style="padding: 10px 28px 0;">
+        <div class="sql-preview">
+          <div class="sql-preview-header">
+            <span style="width:8px;height:8px;border-radius:50%;background:var(--border-accent);display:inline-block;"></span>
+            <span style="width:8px;height:8px;border-radius:50%;background:var(--border-accent);display:inline-block;margin-left:4px;"></span>
+            <span style="width:8px;height:8px;border-radius:50%;background:var(--border-accent);display:inline-block;margin-left:4px;"></span>
+            <span class="sql-preview-title">SQL PREVIEW</span>
+          </div>
+          <div class="sql-preview-body" id="sql-preview"></div>
+        </div>
+      </div>
+
+      <div class="results-area" id="results-area">
+        <div class="state-box">
+          <div class="state-icon">⬡</div>
+          <span>Select a query mode and enter a PO number</span>
+          <span style="font-size:11px;color:var(--text-dim);">Results will appear here</span>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- CONFIG MODAL -->
+  <div class="config-modal" id="config-modal">
+    <div class="config-panel">
+      <div class="config-title">
+        ⚙ Connection Settings
+        <button class="config-close" onclick="closeConfig()">✕</button>
+      </div>
+      <div class="field-group">
+        <div class="field-label">n8n Webhook URL</div>
+        <input class="field-input" id="cfg-webhook" type="text" placeholder="http://localhost:5678/webhook/po-query" />
+      </div>
+      <div class="field-group">
+        <div class="field-label">Authorization Header (optional)</div>
+        <input class="field-input" id="cfg-auth" type="text" placeholder="Bearer eyJ..." />
+      </div>
+      <div class="config-note">
+        Sends <code>POST</code> → <code>{ "queryType": "search|list|count|update|compare", "searchKeyword": "PO" }</code><br><br>
+        <b>search</b> = Staging PO &nbsp;|&nbsp; <b>list</b> = Error PO &nbsp;|&nbsp; <b>count</b> = PO Line AX<br>
+        <b>update</b> = Pack/Roll &nbsp;|&nbsp; <b>compare</b> = fires both <b>search</b> + <b>count</b> in parallel
+      </div>
+      <button class="save-btn" onclick="saveConfig()">Save & Close</button>
+    </div>
+  </div>
+
+  <script>
+    // ── State ──────────────────────────────────────────────────────────
+    let mode = 'search';
+    let history = [];
+    let cfg = {
+      webhook: localStorage.getItem('po_webhook') || '',
+      auth:    localStorage.getItem('po_auth')    || ''
+    };
+
+    const MODES = {
+      search:  { label: 'SEARCH PO (STAGING)', tagClass: 'tag-search',  navClass: 'active-search'  },
+      list:    { label: 'ERROR PO',             tagClass: 'tag-list',    navClass: 'active-list'    },
+      count:   { label: 'PO LINE (AX)',         tagClass: 'tag-count',   navClass: 'active-count'   },
+      update:  { label: 'PACK / ROLL',          tagClass: 'tag-update',  navClass: 'active-update'  },
+      compare: { label: 'COMPARE PO',           tagClass: 'tag-compare', navClass: 'active-compare' }
+    };
+
+    // ── Init ───────────────────────────────────────────────────────────
+    updateSQLPreview();
+    updateEndpointDisplay();
+
+    // ── Mode ───────────────────────────────────────────────────────────
+    function setMode(m) {
+      mode = m;
+      Object.keys(MODES).forEach(id => {
+        const el = document.getElementById('nav-' + id);
+        if (el) el.className = 'nav-item' + (m === id ? ' ' + MODES[id].navClass : '');
+      });
+      updateSQLPreview();
+    }
+
+    // ── SQL Preview ────────────────────────────────────────────────────
+    function updateSQLPreview() {
+      const po = document.getElementById('po-input').value.trim() || '?';
+      const el = document.getElementById('sql-preview');
+      const kw = s => `<span class="sql-kw">${s}</span>`;
+      const vl = s => `<span class="sql-val">${s}</span>`;
+      const fn = s => `<span class="sql-fn">${s}</span>`;
+
+      if (mode === 'search') {
+        el.innerHTML = `${kw('SELECT')} ISSELECTED, TRANSFERSTATUS, LINENUMBER, EXECUTIONID,
+       PURCHQTY, PURCHPRICE, LINEAMOUNT, PURCHUNIT,
+       inventSerialId ${kw('AS')} JOBNUMBER, ITEMID, INVENTSIZEID,
+       INVENTCOLORID, INVENTSTYLEID, INVENTSITEID, INVENTLOCATIONID, INVENTSTATUSID
+${kw('FROM')} DMFPURCHLINEENTITY
+${kw('WHERE')} PURCHID ${kw('=')} ${vl("'" + po + "'")} ${kw('AND')} EXECUTIONID ${kw('=')} (${kw('SELECT')} ${fn('MAX')}(EXECUTIONID) ${kw('FROM')} DMFPURCHLINEENTITY
+  ${kw('WHERE')} PURCHID ${kw('=')} ${vl("'" + po + "'")} ${kw('AND')} EXECUTIONID ${kw('LIKE')} ${vl("'BotPO%'")})
+${kw('ORDER BY')} LINENUMBER ${kw('ASC')};`;
+      } else if (mode === 'list') {
+        el.innerHTML = `${kw('SELECT')} TRANSFERSTATUS, LINENUMBER, EXECUTIONID, PURCHPRICE,
+       PURCHQTY, ITEMID, INVENTSIZEID, INVENTCOLORID,
+       INVENTSTYLEID ${kw('AS')} [INVENTSEASONID]
+${kw('FROM')} DMFPURCHLINEENTITY
+${kw('WHERE')} PURCHID ${kw('=')} ${vl("'" + po + "'")} ${kw('AND')} EXECUTIONID ${kw('=')} (${kw('SELECT')} ${fn('MAX')}(EXECUTIONID) ${kw('FROM')} DMFPURCHLINEENTITY
+  ${kw('WHERE')} PURCHID ${kw('=')} ${vl("'" + po + "'")} ${kw('AND')} EXECUTIONID ${kw('LIKE')} ${vl("'BotPO%'")})
+  ${kw('AND')} TRANSFERSTATUS ${kw('=')} ${vl('2')}
+${kw('ORDER BY')} LINENUMBER ${kw('ASC')};`;
+      } else if (mode === 'count') {
+        el.innerHTML = `${kw('SELECT')} LINENUMBER, PURCHID, ITEMID,
+       IVZ_COLOR_CT ${kw('AS')} [Color], IVZ_SIZE_CT ${kw('AS')} [Size],
+       IVZ_SEASON_CT ${kw('AS')} [Season], PURCHQTY ${kw('AS')} [QTY],
+       PURCHPRICE ${kw('AS')} [Unit Price], LINEAMOUNT ${kw('AS')} [Net amount],
+       ${fn('SUM')}(PURCHQTY) ${kw('OVER')} () ${kw('AS')} [Total QTY],
+       ${fn('SUM')}(LINEAMOUNT) ${kw('OVER')} () ${kw('AS')} [Total Net amount],
+       PURCHUNIT, NAME ${kw('AS')} [Item Name]
+${kw('FROM')} PURCHLINE
+${kw('WHERE')} PURCHID ${kw('=')} ${vl("'" + po + "'")}
+${kw('ORDER BY')} LINENUMBER ${kw('ASC')};`;
+      } else if (mode === 'update') {
+        el.innerHTML = `${kw('SELECT')} ITEMARRIVALNUM, PURCHID, INVENTLOCATIONID,
+       INVENTSITEID, CREATEDDATETIME, POSTEDDATETIME, POSTED, CREATEDBY
+${kw('FROM')} IVZ_ItemArrivalJour_CT
+${kw('WHERE')} PURCHID ${kw('=')} ${vl("'" + po + "'")};`;
+      } else {
+        // compare: two queries shown
+        el.innerHTML = `<span style="color:var(--accent)">── QUERY 1 (Staging)</span>
+${kw('SELECT')} LINENUMBER, ITEMID, INVENTSIZEID, INVENTCOLORID, PURCHQTY, PURCHPRICE, LINEAMOUNT, TRANSFERSTATUS
+${kw('FROM')} DMFPURCHLINEENTITY ${kw('WHERE')} PURCHID ${kw('=')} ${vl("'" + po + "'")} <span style="color:var(--text-dim)">…MAX EXECUTIONID…</span>
+
+<span style="color:var(--purple)">── QUERY 2 (PO Line AX)</span>
+${kw('SELECT')} LINENUMBER, ITEMID, IVZ_COLOR_CT, IVZ_SIZE_CT, PURCHQTY, PURCHPRICE, LINEAMOUNT
+${kw('FROM')} PURCHLINE ${kw('WHERE')} PURCHID ${kw('=')} ${vl("'" + po + "'")};`;
+      }
+    }
+
+    document.getElementById('po-input').addEventListener('input', updateSQLPreview);
+
+    // ── Helper ─────────────────────────────────────────────────────────
+    function getVal(r, key) {
+      if (!r) return undefined;
+      const kLow = String(key).toLowerCase();
+      for (let j in r) {
+        if (String(j).toLowerCase() === kLow) return r[j];
+      }
+      return undefined;
+    }
+
+    function fmt(v, decimals = 2) {
+      const n = parseFloat(v);
+      if (isNaN(n)) return '—';
+      return n.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+    }
+
+    // ── Fetch helper ───────────────────────────────────────────────────
+    async function fetchQuery(queryType, po) {
+      const headers = { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' };
+      if (cfg.auth) headers['Authorization'] = cfg.auth;
+      const res = await fetch(cfg.webhook, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ queryType, searchKeyword: po })
+      });
+      if (!res.ok) {
+        const txt = await res.text().catch(() => '');
+        throw new Error(`HTTP ${res.status} (${queryType}): ${res.statusText}${txt ? ' — ' + txt.slice(0,80) : ''}`);
+      }
+      const data = await res.json();
+      const rows = Array.isArray(data) ? data
+        : Array.isArray(data.rows)  ? data.rows
+        : Array.isArray(data.data)  ? data.data : [];
+      return { rows, raw: data };
+    }
+
+    // ── Run Query ──────────────────────────────────────────────────────
+    async function runQuery() {
+      const po = document.getElementById('po-input').value.trim();
+      if (!po)          { showError('Please enter a PO number.'); return; }
+      if (!cfg.webhook) { openConfig(); return; }
+
+      showLoading();
+      const btn = document.getElementById('run-btn');
+      btn.disabled = true;
+
+      try {
+        if (mode === 'compare') {
+          // Fire both queries in parallel
+          const [stagingRes, axRes] = await Promise.all([
+            fetchQuery('search', po),
+            fetchQuery('count',  po)
+          ]);
+          addHistory(po, mode, stagingRes.rows.length + axRes.rows.length);
+          renderCompare(stagingRes.rows, axRes.rows, po);
+        } else {
+          const { rows, raw } = await fetchQuery(mode, po);
+          const serverTotalQty    = getVal(raw, 'totalQTY')      ?? getVal(raw, 'total_qty')    ?? null;
+          const serverTotalAmount = getVal(raw, 'totalNetAmount') ?? getVal(raw, 'total_amount') ?? null;
+          addHistory(po, mode, rows.length);
+          renderResults(rows, po, serverTotalQty, serverTotalAmount);
+        }
+      } catch (e) {
+        let msg = e.message || 'Network error.';
+        if (msg.toLowerCase().includes('failed to fetch')) {
+          msg = 'Failed to fetch — possible causes:<br>① Wrong webhook URL in Config<br>② n8n workflow not Published/Active<br>③ ngrok tunnel is offline (restart ngrok)';
+        }
+        showError(msg);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    // ── Compare PO ─────────────────────────────────────────────────────
+    function renderCompare(stagingRows, axRows, po) {
+      const area = document.getElementById('results-area');
+      updateBadge('compare', stagingRows.length + axRes_len(axRows));
+
+      // Build lookup maps keyed by LINENUMBER (primary) + ITEMID (secondary)
+      const makeKey = (r, lineKey, itemKey) => {
+        const line = String(getVal(r, lineKey) ?? '').trim();
+        const item = String(getVal(r, itemKey) ?? '').trim();
+        return line + '::' + item;
+      };
+
+      // Staging row accessors
+      const sLine = r => parseFloat(getVal(r, 'LINENUMBER')) || 0;
+      const sQty  = r => parseFloat(getVal(r, 'PURCHQTY'))   || 0;
+      const sAmt  = r => parseFloat(getVal(r, 'LINEAMOUNT')) || 0;
+      const sItem = r => getVal(r, 'ITEMID') ?? '—';
+      const sSize = r => getVal(r, 'INVENTSIZEID') ?? '—';
+      const sColor= r => getVal(r, 'INVENTCOLORID') ?? '—';
+      const sTransfer = r => parseInt(getVal(r, 'TRANSFERSTATUS'));
+
+      // AX row accessors (PURCHLINE aliases)
+      const aLine = r => parseFloat(getVal(r, 'LINENUMBER')) || 0;
+      // AX qty: could be 'QTY' alias or 'PURCHQTY'
+      const aQty  = r => parseFloat(getVal(r, 'QTY') ?? getVal(r, 'PURCHQTY'))     || 0;
+      // AX amount: 'Net amount' alias or 'LINEAMOUNT'
+      const aAmt  = r => parseFloat(getVal(r, 'Net amount') ?? getVal(r, 'LINEAMOUNT')) || 0;
+      const aItem = r => getVal(r, 'ITEMID') ?? '—';
+      // AX size: 'Size' alias or 'IVZ_SIZE_CT'
+      const aSize = r => getVal(r, 'Size') ?? getVal(r, 'IVZ_SIZE_CT') ?? '—';
+      // AX color: 'Color' alias or 'IVZ_COLOR_CT'
+      const aColor= r => getVal(r, 'Color') ?? getVal(r, 'IVZ_COLOR_CT') ?? '—';
+
+      // Build maps: lineNumber → row
+      const stagingMap = {};
+      stagingRows.forEach(r => { stagingMap[sLine(r)] = r; });
+      const axMap = {};
+      axRows.forEach(r => { axMap[aLine(r)] = r; });
+
+      // Union of all line numbers
+      const allLines = [...new Set([
+        ...stagingRows.map(r => sLine(r)),
+        ...axRows.map(r => aLine(r))
+      ])].sort((a, b) => a - b);
+
+      // Totals
+      const stagingTotalQty = stagingRows.reduce((s, r) => s + sQty(r), 0);
+      const stagingTotalAmt = stagingRows.reduce((s, r) => s + sAmt(r), 0);
+      const axTotalQty      = axRows.reduce((s, r) => s + aQty(r), 0);
+      const axTotalAmt      = axRows.reduce((s, r) => s + aAmt(r), 0);
+      const diffQty         = axTotalQty - stagingTotalQty;
+      const diffAmt         = axTotalAmt - stagingTotalAmt;
+      const qtyMatch        = Math.abs(diffQty) < 0.01;
+      const amtMatch        = Math.abs(diffAmt) < 0.01;
+      const lineMatch       = stagingRows.length === axRows.length;
+      const allMatch        = qtyMatch && amtMatch && lineMatch;
+
+      // Count mismatches per line
+      let mismatchLines = 0, onlyStaging = 0, onlyAx = 0;
+      allLines.forEach(ln => {
+        const s = stagingMap[ln], a = axMap[ln];
+        if (!s) { onlyAx++; }
+        else if (!a) { onlyStaging++; }
+        else {
+          const qDiff = Math.abs(aQty(a) - sQty(s));
+          const aDiff = Math.abs(aAmt(a) - sAmt(s));
+          if (qDiff > 0.01 || aDiff > 0.01) mismatchLines++;
+        }
+      });
+
+      // ── Summary cards ──
+      const summaryHTML = `
+        <div class="summary-row">
+          <div class="summary-card ${lineMatch ? 'highlight-match' : 'highlight-mismatch'}">
+            <div class="summary-label">Lines Staging / AX</div>
+            <div class="summary-value ${lineMatch ? 'green' : 'red'}">${stagingRows.length} / ${axRows.length}</div>
+            <div class="summary-sub">${lineMatch ? '✓ Match' : '✗ Mismatch'}</div>
+          </div>
+          <div class="summary-card ${qtyMatch ? 'highlight-match' : 'highlight-mismatch'}">
+            <div class="summary-label">Total QTY Staging</div>
+            <div class="summary-value blue">${fmt(stagingTotalQty, 0)}</div>
+            <div class="summary-sub" style="color:var(--purple)">AX: ${fmt(axTotalQty, 0)}</div>
+          </div>
+          <div class="summary-card ${qtyMatch ? 'highlight-match' : 'highlight-mismatch'}">
+            <div class="summary-label">QTY Diff (AX − Staging)</div>
+            <div class="summary-value ${qtyMatch ? 'teal' : 'red'}">${diffQty >= 0 ? '+' : ''}${fmt(diffQty, 0)}</div>
+            <div class="summary-sub">${qtyMatch ? '✓ Match' : '✗ Mismatch'}</div>
+          </div>
+          <div class="summary-card ${amtMatch ? 'highlight-match' : 'highlight-mismatch'}">
+            <div class="summary-label">Total Amount Staging</div>
+            <div class="summary-value blue">${fmt(stagingTotalAmt, 2)}</div>
+            <div class="summary-sub" style="color:var(--purple)">AX: ${fmt(axTotalAmt, 2)}</div>
+          </div>
+          <div class="summary-card ${amtMatch ? 'highlight-match' : 'highlight-mismatch'}">
+            <div class="summary-label">Amount Diff (AX − Staging)</div>
+            <div class="summary-value ${amtMatch ? 'teal' : 'red'}">${diffAmt >= 0 ? '+' : ''}${fmt(diffAmt, 2)}</div>
+            <div class="summary-sub">${amtMatch ? '✓ Match' : '✗ Mismatch'}</div>
+          </div>
+          <div class="summary-card ${mismatchLines + onlyStaging + onlyAx === 0 ? 'highlight-match' : 'highlight-mismatch'}">
+            <div class="summary-label">Line Issues</div>
+            <div class="summary-value ${mismatchLines + onlyStaging + onlyAx === 0 ? 'green' : 'red'}">${mismatchLines + onlyStaging + onlyAx}</div>
+            <div class="summary-sub">${mismatchLines} qty/amt · ${onlyStaging} stg-only · ${onlyAx} ax-only</div>
+          </div>
+        </div>`;
+
+      // ── Comparison table ──
+      const cols = ['LINE','ITEM ID','SIZE','COLOR',
+        'STG QTY','AX QTY','Δ QTY',
+        'STG AMOUNT','AX AMOUNT','Δ AMOUNT',
+        'TRANSFER','STATUS'];
+
+      const rows_html = allLines.map(ln => {
+        const s = stagingMap[ln];
+        const a = axMap[ln];
+
+        let rowClass = 'row-match';
+        if (!s) rowClass = 'row-only-ax';
+        else if (!a) rowClass = 'row-only-staging';
+        else {
+          const qd = Math.abs(aQty(a) - sQty(s));
+          const ad = Math.abs(aAmt(a) - sAmt(s));
+          if (qd > 0.01 || ad > 0.01) rowClass = 'row-mismatch';
+        }
+
+        const itemId   = s ? sItem(s) : (a ? aItem(a) : '—');
+        const size     = s ? sSize(s) : (a ? aSize(a) : '—');
+        const color    = s ? sColor(s): (a ? aColor(a): '—');
+
+        const stgQty   = s ? sQty(s)  : null;
+        const axQty    = a ? aQty(a)  : null;
+        const stgAmt   = s ? sAmt(s)  : null;
+        const axAmt    = a ? aAmt(a)  : null;
+
+        const dQty = (stgQty !== null && axQty !== null) ? (axQty - stgQty) : null;
+        const dAmt = (stgAmt !== null && axAmt !== null) ? (axAmt - stgAmt) : null;
+
+        const qtyOk = dQty !== null && Math.abs(dQty) < 0.01;
+        const amtOk = dAmt !== null && Math.abs(dAmt) < 0.01;
+
+        const transfer = s ? sTransfer(s) : null;
+        const tLabels = {1:'Completed',2:'ERROR',0:'Pending'};
+        const tCls    = {1:'transfer-ok',2:'transfer-error',0:'transfer-pending'};
+        const tv = transfer !== null ? transfer : -1;
+        const transferCell = s
+          ? `<td><span class="transfer-badge ${tCls[tv]||'transfer-pending'}">● ${tLabels[tv]||'?'}</span></td>`
+          : `<td class="td-dim">—</td>`;
+
+        let statusCell;
+        if (!s)      statusCell = `<td><span class="match-badge match-ax">AX Only</span></td>`;
+        else if (!a) statusCell = `<td><span class="match-badge match-staging">Staging Only</span></td>`;
+        else if (!qtyOk || !amtOk) statusCell = `<td><span class="match-badge match-bad">✗ Mismatch</span></td>`;
+        else         statusCell = `<td><span class="match-badge match-ok">✓ Match</span></td>`;
+
+        const tdNum = (v, dec=0) => v !== null
+          ? `<td class="num">${fmt(v, dec)}</td>`
+          : `<td class="diff-missing">—</td>`;
+
+        const tdDiff = (d, ok) => {
+          if (d === null) return `<td class="diff-missing">—</td>`;
+          if (Math.abs(d) < 0.01) return `<td class="diff-zero">0</td>`;
+          return `<td class="${ok ? 'diff-ok' : 'diff-bad'}">${d > 0 ? '+' : ''}${fmt(d, d % 1 === 0 ? 0 : 2)}</td>`;
+        };
+
+        return `<tr class="${rowClass}">
+          <td class="num">${ln}</td>
+          <td>${itemId !== '—' ? itemId : '<span class="td-dim">—</span>'}</td>
+          <td>${size  !== '—' ? size   : '<span class="td-dim">—</span>'}</td>
+          <td>${color !== '—' ? color  : '<span class="td-dim">—</span>'}</td>
+          ${tdNum(stgQty, 0)}
+          ${tdNum(axQty,  0)}
+          ${tdDiff(dQty, qtyOk)}
+          ${tdNum(stgAmt, 2)}
+          ${tdNum(axAmt,  2)}
+          ${tdDiff(dAmt, amtOk)}
+          ${transferCell}
+          ${statusCell}
+        </tr>`;
+      }).join('');
+
+      // Group header row for column grouping
+      const groupHeaderHTML = `<tr>
+        <th colspan="4" class="th-group-base" style="border-right:1px solid var(--border-accent);">LINE INFO</th>
+        <th colspan="3" class="th-group-staging" style="border-right:1px solid rgba(79,156,249,0.2);">QTY</th>
+        <th colspan="3" class="th-group-ax" style="border-right:1px solid rgba(167,139,250,0.2);">AMOUNT</th>
+        <th colspan="2" class="th-group-diff">STATUS</th>
+      </tr>`;
+
+      area.innerHTML = `
+        ${summaryHTML}
+        <div class="results-meta">
+          <span class="results-count">
+            Comparing PO <strong>${po}</strong> — 
+            <span style="color:var(--accent)">${stagingRows.length} Staging</span> vs 
+            <span style="color:var(--purple)">${axRows.length} AX Lines</span>
+          </span>
+          <span class="tag tag-compare">COMPARE PO</span>
+          ${allMatch ? '<span class="tag tag-ok">✓ FULL MATCH</span>' : `<span class="tag tag-list">✗ ${mismatchLines+onlyStaging+onlyAx} ISSUE${mismatchLines+onlyStaging+onlyAx!==1?'S':''}</span>`}
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              ${groupHeaderHTML}
+              <tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr>
+            </thead>
+            <tbody>${rows_html}</tbody>
+          </table>
+        </div>`;
+    }
+
+    // tiny helper used in renderCompare before axRows is destructured
+    function axRes_len(arr) { return arr ? arr.length : 0; }
+
+    // ── Render Results (non-compare modes) ────────────────────────────
+    function renderResults(rows, po, serverTotalQty, serverTotalAmount) {
+      const area = document.getElementById('results-area');
+      const modeInfo = MODES[mode];
+
+      if (rows.length === 0) {
+        const icons = { search:'⊘', list:'✅', count:'⊘', update:'⊘' };
+        const msgs  = {
+          search: `No staging data found for PO <strong>${po}</strong>.`,
+          list:   `✅ No errors — all lines transferred successfully for PO <strong>${po}</strong>.`,
+          count:  `No PO lines found in AX for PO <strong>${po}</strong>.`,
+          update: `No Pack/Roll records found for PO <strong>${po}</strong>.`
+        };
+        area.innerHTML = `
+          <div class="state-box" style="border-style:solid;border-color:${mode==='list'?'rgba(62,207,142,0.3)':'var(--border)'};">
+            <div class="state-icon">${icons[mode]}</div>
+            <span style="color:var(--text);">${msgs[mode]}</span>
+          </div>`;
+        updateBadge(mode, 0);
+        return;
+      }
+
+      updateBadge(mode, rows.length);
+
+      let cols, colKeys;
+
+      if (mode === 'search') {
+        cols    = ['LINE','EXEC ID','ITEM ID','SIZE','COLOR','STYLE','QTY','PRICE','AMOUNT','JOB NO','SITE','LOCATION','STATUS','TRANSFER'];
+        colKeys = ['LINENUMBER','EXECUTIONID','ITEMID','INVENTSIZEID','INVENTCOLORID','INVENTSTYLEID','PURCHQTY','PURCHPRICE','LINEAMOUNT','JOBNUMBER','INVENTSITEID','INVENTLOCATIONID','INVENTSTATUSID','TRANSFERSTATUS'];
+      } else if (mode === 'list') {
+        cols    = ['LINE','EXEC ID','ITEM ID','SIZE','COLOR','SEASON','QTY','PRICE','TRANSFER'];
+        colKeys = ['LINENUMBER','EXECUTIONID','ITEMID','INVENTSIZEID','INVENTCOLORID','INVENTSEASONID','PURCHQTY','PURCHPRICE','TRANSFERSTATUS'];
+      } else if (mode === 'count') {
+        cols    = ['LINE','ITEM ID','COLOR','SIZE','SEASON','QTY','UNIT PRICE','NET AMOUNT','UNIT'];
+        colKeys = ['LINENUMBER','ITEMID','IVZ_COLOR_CT','IVZ_SIZE_CT','IVZ_SEASON_CT','PURCHQTY','PURCHPRICE','LINEAMOUNT','PURCHUNIT'];
+      } else {
+        cols    = ['ARRIVAL NUM','PO','LOCATION','SITE','CREATED','POSTED DATE','POSTED','CREATED BY'];
+        colKeys = ['ITEMARRIVALNUM','PURCHID','INVENTLOCATIONID','INVENTSITEID','CREATEDDATETIME','POSTEDDATETIME','POSTED','CREATEDBY'];
+      }
+
+      const rows_html = rows.map(r => {
+        return '<tr>' + colKeys.map(k => {
+          let origVal = getVal(r, k);
+          let val = (origVal !== undefined && origVal !== null && origVal !== '') ? origVal : '—';
+
+          if (val !== '—') {
+            if (k === 'PURCHQTY') val = parseFloat(val || 0).toFixed(0);
+            if (k === 'PURCHPRICE' || k === 'Unit Price') val = parseFloat(val || 0).toFixed(5);
+            if (k === 'LINEAMOUNT') val = parseFloat(val || 0).toFixed(2);
+            if (k === 'Net amount') val = parseFloat(val || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          }
+
+          if (k === 'TRANSFERSTATUS') {
+            const v = parseInt(val);
+            const labels = {1:'Completed',2:'ERROR',0:'Pending'};
+            const cls    = {1:'transfer-ok',2:'transfer-error',0:'transfer-pending'};
+            return `<td><span class="transfer-badge ${cls[v]||'transfer-pending'}">● ${labels[v]||'Pending'}</span></td>`;
+          }
+          if (k === 'POSTED') {
+            const v = parseInt(val);
+            return `<td><span class="${v===1?'posted-yes':'posted-no'}">${v===1?'● Posted':'○ Not Posted'}</span></td>`;
+          }
+          if (k === 'LINENUMBER') return `<td class="num">${val}</td>`;
+          if (!val || val === '—') return `<td class="td-dim">—</td>`;
+          return `<td>${val}</td>`;
+        }).join('') + '</tr>';
+      }).join('');
+
+      let summaryHTML = '';
+      if (mode === 'search') {
+        const totalQty = rows.reduce((s,r) => s + (parseFloat(getVal(r,'PURCHQTY')||0)||0), 0);
+        const totalAmt = rows.reduce((s,r) => s + (parseFloat(getVal(r,'LINEAMOUNT')||0)||0), 0);
+        const errCount = rows.filter(r => parseInt(getVal(r,'TRANSFERSTATUS'))===2).length;
+        const okCount  = rows.filter(r => parseInt(getVal(r,'TRANSFERSTATUS'))===1).length;
+        summaryHTML = `<div class="summary-row">
+          <div class="summary-card"><div class="summary-label">Total Lines</div><div class="summary-value blue">${rows.length}</div></div>
+          <div class="summary-card"><div class="summary-label">Completed</div><div class="summary-value green">${okCount}</div></div>
+          <div class="summary-card"><div class="summary-label">Errors</div><div class="summary-value ${errCount>0?'red':'green'}">${errCount}</div></div>
+          <div class="summary-card"><div class="summary-label">Total Qty</div><div class="summary-value">${parseFloat(totalQty).toLocaleString()}</div></div>
+          <div class="summary-card"><div class="summary-label">Total Amount</div><div class="summary-value">${parseFloat(totalAmt).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</div></div>
+        </div>`;
+      } else if (mode === 'list') {
+        summaryHTML = `<div class="summary-row">
+          <div class="summary-card"><div class="summary-label">Error Lines</div><div class="summary-value red">${rows.length}</div></div>
+        </div>`;
+      } else if (mode === 'count') {
+        const row0Qty = rows[0] ? (parseFloat(getVal(rows[0],'Total QTY'))||0) : 0;
+        const row0Amt = rows[0] ? (parseFloat(getVal(rows[0],'Total Net amount'))||0) : 0;
+        const sumQty  = rows.reduce((s,r)=>s+(parseFloat(getVal(r,'QTY')||getVal(r,'PURCHQTY'))||0),0);
+        const sumAmt  = rows.reduce((s,r)=>s+(parseFloat(getVal(r,'Net amount')||getVal(r,'LINEAMOUNT'))||0),0);
+        let totalQty  = serverTotalQty  ?? (row0Qty!==0 ? row0Qty : sumQty);
+        let totalAmt  = serverTotalAmount ?? (row0Amt!==0 ? row0Amt : sumAmt);
+        summaryHTML = `<div class="summary-row">
+          <div class="summary-card"><div class="summary-label">Total Lines</div><div class="summary-value purple">${rows.length}</div></div>
+          <div class="summary-card"><div class="summary-label">Total QTY</div><div class="summary-value blue">${parseFloat(totalQty).toLocaleString()}</div></div>
+          <div class="summary-card"><div class="summary-label">Total Net Amount</div><div class="summary-value">${parseFloat(totalAmt).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</div></div>
+        </div>`;
+      } else {
+        const posted = rows.filter(r=>parseInt(r.POSTED)===1).length;
+        summaryHTML = `<div class="summary-row">
+          <div class="summary-card"><div class="summary-label">Records</div><div class="summary-value orange">${rows.length}</div></div>
+          <div class="summary-card"><div class="summary-label">Posted</div><div class="summary-value green">${posted}</div></div>
+          <div class="summary-card"><div class="summary-label">Not Posted</div><div class="summary-value red">${rows.length-posted}</div></div>
+        </div>`;
+      }
+
+      area.innerHTML = `
+        ${summaryHTML}
+        <div class="results-meta">
+          <span class="results-count">Showing <strong>${rows.length}</strong> row${rows.length!==1?'s':''} for PO <strong>${po}</strong></span>
+          <span class="tag ${modeInfo.tagClass}">${modeInfo.label}</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead>
+            <tbody>${rows_html}</tbody>
+          </table>
+        </div>`;
+    }
+
+    // ── Loading / Error ────────────────────────────────────────────────
+    function showLoading() {
+      const loadingMsg = mode === 'compare'
+        ? '<span>Fetching Staging + AX in parallel…</span>'
+        : '<span>Executing query…</span>';
+      document.getElementById('results-area').innerHTML =
+        `<div class="state-box"><div class="spinner"></div>${loadingMsg}</div>`;
+    }
+
+    function showError(msg) {
+      document.getElementById('results-area').innerHTML = `
+        <div class="err-box"><span style="font-size:16px;flex-shrink:0;">⚠</span><div>${msg}</div></div>
+        <div class="state-box" style="flex:1;"><div class="state-icon" style="font-size:24px;">?</div>
+        <span style="font-size:11px;color:var(--text-dim);">Check your webhook URL in ⚙ Config</span></div>`;
+    }
+
+    // ── History ────────────────────────────────────────────────────────
+    function addHistory(po, m, count) {
+      history.unshift({ po, mode: m, count });
+      if (history.length > 12) history.pop();
+      renderHistory();
+    }
+    function renderHistory() {
+      document.getElementById('history-list').innerHTML = history.map(h => `
+        <div class="history-item" onclick="restoreHistory('${h.po}','${h.mode}')">
+          <div class="history-dot ${h.mode}"></div>
+          <span style="flex:1;overflow:hidden;text-overflow:ellipsis;">${h.po}</span>
+          <span style="font-size:10px;color:var(--text-dim);">${h.count}</span>
+        </div>`).join('');
+    }
+    function restoreHistory(po, m) {
+      document.getElementById('po-input').value = po;
+      setMode(m);
+      updateSQLPreview();
+    }
+    function updateBadge(m, n) {
+      const el = document.getElementById('badge-' + m);
+      if (el) el.textContent = n;
+    }
+
+    // ── Config ─────────────────────────────────────────────────────────
+    function openConfig() {
+      document.getElementById('cfg-webhook').value = cfg.webhook;
+      document.getElementById('cfg-auth').value    = cfg.auth;
+      document.getElementById('config-modal').classList.add('open');
+    }
+    function closeConfig() { document.getElementById('config-modal').classList.remove('open'); }
+    function saveConfig() {
+      cfg.webhook = document.getElementById('cfg-webhook').value.trim();
+      cfg.auth    = document.getElementById('cfg-auth').value.trim();
+      localStorage.setItem('po_webhook', cfg.webhook);
+      localStorage.setItem('po_auth',    cfg.auth);
+      updateEndpointDisplay();
+      closeConfig();
+    }
+    function updateEndpointDisplay() {
+      const el = document.getElementById('endpoint-display');
+      if (cfg.webhook) {
+        try { const u = new URL(cfg.webhook); el.textContent = u.hostname + u.pathname; }
+        catch { el.textContent = cfg.webhook.slice(0,32) + '…'; }
+      } else { el.textContent = 'Not configured'; }
+    }
+    document.getElementById('config-modal').addEventListener('click', function(e){ if(e.target===this) closeConfig(); });
+  </script>
+</body>
+</html>

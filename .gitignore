@@ -1,0 +1,14 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Local tool settings
+.claude/
+skills-lock.json
+
+# OS
+.DS_Store
+Thumbs.db
+*.tmp

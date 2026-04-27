@@ -1,0 +1,112 @@
+/* ================================================================
+   HISTORY
+   ================================================================ */
+.history-item {
+  padding: 7px 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--text-muted);
+  transition: all 0.15s ease;
+  border-left: 2px solid transparent;
+}
+
+.history-item:hover {
+  background: linear-gradient(90deg, var(--surface3) 0%, transparent 80%);
+  color: var(--text);
+  border-left-color: var(--border-bright);
+}
+
+.history-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  flex-shrink: 0;
+}
+
+.history-dot.search {
+  background: var(--accent);
+  box-shadow: 0 0 5px var(--accent);
+}
+
+.history-dot.list {
+  background: var(--red);
+  box-shadow: 0 0 5px var(--red);
+}
+
+.history-dot.count {
+  background: var(--purple);
+  box-shadow: 0 0 5px var(--purple);
+}
+
+.history-dot.update {
+  background: var(--orange);
+  box-shadow: 0 0 5px var(--orange);
+}
+
+.history-dot.packroll {
+  background: var(--orange);
+  box-shadow: 0 0 5px var(--orange);
+}
+
+.history-dot.compare {
+  background: var(--teal);
+  box-shadow: 0 0 5px var(--teal);
+}
+
+.history-dot.searchdbc {
+  background: #38bdf8;
+  box-shadow: 0 0 5px #38bdf8;
+}
+
+.history-dot.comparedbc {
+  background: #e879f9;
+  box-shadow: 0 0 5px #e879f9;
+}
+
+/* ── Compare Section Header ── */
+.compare-section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.compare-section-header::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--border), transparent);
+}
+
+/* ================================================================
+   SCROLLBAR
+   ================================================================ */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-accent);
+  border-radius: 3px;
+  transition: background 0.2s;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-bright);
+}
+

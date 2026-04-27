@@ -1,0 +1,412 @@
+/* ================================================================
+   SPACE THEME  —  Cosmic Deep Purple
+   ================================================================ */
+
+/* ── Space button ── */
+.space-theme-btn {
+  position: relative;
+  width: 30px;
+  height: 26px;
+  background: var(--surface3);
+  border: 1px solid var(--border-accent);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  flex-shrink: 0;
+  transition: border-color 0.25s, color 0.25s, box-shadow 0.25s, background 0.25s;
+  letter-spacing: 0;
+}
+
+.space-theme-btn:hover {
+  border-color: #8b5cf6;
+  color: #c77dff;
+  box-shadow: 0 0 12px rgba(139, 92, 246, 0.4);
+}
+
+html[data-theme="space"] .space-theme-btn {
+  border-color: #8b5cf6;
+  color: #e0aaff;
+  background: rgba(139, 92, 246, 0.12);
+  box-shadow: 0 0 10px rgba(139, 92, 246, 0.35), inset 0 0 8px rgba(199, 125, 255, 0.08);
+}
+
+/* ── Variables ── */
+html[data-theme="space"] {
+  --bg: #07051a;
+  --surface: #0d0a24;
+  --surface2: #120f2e;
+  --surface3: #1a1540;
+  --border: #251d4a;
+  --border-accent: #3d3070;
+  --border-bright: #5e4a9c;
+
+  --text-primary: #f0ecff;
+  --text: #c8bbf0;
+  --text-muted: #7e6db5;
+  --text-dim: #3a2f68;
+
+  --accent: #c77dff;
+  --accent-bright: #e0aaff;
+  --accent-glow: rgba(199, 125, 255, 0.15);
+  --accent-glow-strong: rgba(199, 125, 255, 0.35);
+
+  --green: #72efdd;
+  --green-glow: rgba(114, 239, 221, 0.12);
+  --green-glow-strong: rgba(114, 239, 221, 0.30);
+
+  --red: #ff6b9d;
+  --red-glow: rgba(255, 107, 157, 0.12);
+  --red-glow-strong: rgba(255, 107, 157, 0.30);
+
+  --yellow: #ffe66d;
+  --yellow-glow: rgba(255, 230, 109, 0.12);
+
+  --purple: #c77dff;
+  --purple-glow: rgba(199, 125, 255, 0.12);
+  --purple-glow-strong: rgba(199, 125, 255, 0.30);
+
+  --orange: #ff9e64;
+  --orange-glow: rgba(255, 158, 100, 0.12);
+
+  --teal: #72efdd;
+  --teal-glow: rgba(114, 239, 221, 0.12);
+  --teal-glow-strong: rgba(114, 239, 221, 0.30);
+}
+
+/* ── Background + stars ── */
+html[data-theme="space"] body {
+  background: #07051a;
+  color: var(--text);
+}
+
+/* Star field + subtle purple grid */
+html[data-theme="space"] body::before {
+  background-image:
+    radial-gradient(circle 1px   at  5% 12%, rgba(255,255,255,0.85) 0%, transparent 1px),
+    radial-gradient(circle 1px   at 18% 35%, rgba(230,210,255,0.70) 0%, transparent 1px),
+    radial-gradient(circle 1px   at 33%  8%, rgba(255,255,255,0.90) 0%, transparent 1px),
+    radial-gradient(circle 1.5px at 45% 58%, rgba(210,180,255,0.75) 0%, transparent 1.5px),
+    radial-gradient(circle 1px   at 62% 22%, rgba(255,255,255,0.80) 0%, transparent 1px),
+    radial-gradient(circle 1px   at 78% 45%, rgba(200,220,255,0.70) 0%, transparent 1px),
+    radial-gradient(circle 1px   at 91% 15%, rgba(255,255,255,0.85) 0%, transparent 1px),
+    radial-gradient(circle 1px   at 12% 72%, rgba(240,220,255,0.65) 0%, transparent 1px),
+    radial-gradient(circle 1px   at 27% 88%, rgba(255,255,255,0.75) 0%, transparent 1px),
+    radial-gradient(circle 1.5px at 55% 75%, rgba(210,190,255,0.80) 0%, transparent 1.5px),
+    radial-gradient(circle 1px   at 70% 92%, rgba(255,255,255,0.60) 0%, transparent 1px),
+    radial-gradient(circle 1px   at 85% 68%, rgba(255,255,255,0.85) 0%, transparent 1px),
+    radial-gradient(circle 1px   at  3% 50%, rgba(220,200,255,0.70) 0%, transparent 1px),
+    radial-gradient(circle 1px   at 40% 30%, rgba(255,255,255,0.80) 0%, transparent 1px),
+    radial-gradient(circle 1px   at 57%  5%, rgba(200,210,255,0.75) 0%, transparent 1px),
+    radial-gradient(circle 1px   at 73% 82%, rgba(255,255,255,0.70) 0%, transparent 1px),
+    radial-gradient(circle 1.5px at 88% 38%, rgba(230,180,255,0.80) 0%, transparent 1.5px),
+    radial-gradient(circle 1px   at 15% 95%, rgba(255,255,255,0.65) 0%, transparent 1px),
+    radial-gradient(circle 1px   at 42% 65%, rgba(210,200,255,0.70) 0%, transparent 1px),
+    radial-gradient(circle 1px   at 67% 48%, rgba(255,255,255,0.80) 0%, transparent 1px),
+    radial-gradient(circle 1px   at 82% 12%, rgba(220,230,255,0.75) 0%, transparent 1px),
+    radial-gradient(circle 1px   at  7% 80%, rgba(255,255,255,0.70) 0%, transparent 1px),
+    radial-gradient(circle 1px   at 31% 20%, rgba(240,210,255,0.80) 0%, transparent 1px),
+    radial-gradient(circle 1px   at 50% 90%, rgba(255,255,255,0.65) 0%, transparent 1px),
+    radial-gradient(circle 1px   at 95% 55%, rgba(210,200,255,0.75) 0%, transparent 1px),
+    radial-gradient(circle 1px   at 22% 60%, rgba(255,255,255,0.80) 0%, transparent 1px),
+    radial-gradient(circle 1px   at 77% 28%, rgba(220,180,255,0.70) 0%, transparent 1px),
+    radial-gradient(circle 1px   at 48% 42%, rgba(255,255,255,0.85) 0%, transparent 1px),
+    radial-gradient(circle 1px   at 63% 78%, rgba(200,220,255,0.70) 0%, transparent 1px),
+    radial-gradient(circle 2px   at 90%  3%, rgba(255,255,255,0.90) 0%, transparent 2px),
+    /* purple grid */
+    linear-gradient(rgba(139, 92, 246, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(139, 92, 246, 0.05) 1px, transparent 1px);
+  background-size:
+    100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%,
+    100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%,
+    100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%,
+    100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%,
+    100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%,
+    100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%,
+    40px 40px, 40px 40px;
+}
+
+/* Nebula glow layers */
+html[data-theme="space"] body::after {
+  background:
+    radial-gradient(ellipse 70% 45% at 15% -5%,  rgba(120, 40, 220, 0.22) 0%, transparent 60%),
+    radial-gradient(ellipse 55% 40% at 90% 85%,  rgba(80,  10, 180, 0.15) 0%, transparent 55%),
+    radial-gradient(ellipse 35% 30% at 55% 110%, rgba(180, 80, 240, 0.10) 0%, transparent 55%),
+    radial-gradient(ellipse 25% 25% at 75%  20%, rgba(100, 40, 200, 0.08) 0%, transparent 50%);
+}
+
+/* ── Header ── */
+html[data-theme="space"] header {
+  background: linear-gradient(180deg, #120f2e 0%, #0d0a24 100%);
+  border-bottom-color: #3d3070;
+}
+
+html[data-theme="space"] header::before {
+  background: linear-gradient(90deg,
+    #9d4edd, #c77dff, #7b2fbe, #e0aaff, #9d4edd);
+}
+
+html[data-theme="space"] header::after {
+  background: radial-gradient(ellipse at 60px center, rgba(199, 125, 255, 0.08) 0%, transparent 70%);
+}
+
+html[data-theme="space"] .logo-icon {
+  background: linear-gradient(135deg, #9d4edd 0%, #7b2fbe 100%);
+  box-shadow:
+    0 0 0 1px rgba(199, 125, 255, 0.35),
+    0 0 18px rgba(157, 78, 221, 0.45),
+    0 3px 8px rgba(0, 0, 0, 0.5);
+}
+
+html[data-theme="space"] .logo-text {
+  color: #e0aaff;
+}
+
+html[data-theme="space"] .status-dot {
+  background: #c77dff;
+  box-shadow: 0 0 6px rgba(199, 125, 255, 0.8);
+}
+
+/* ── Sidebar ── */
+html[data-theme="space"] aside {
+  background: linear-gradient(180deg, #0f0c28 0%, #0a0820 100%);
+  border-right-color: #251d4a;
+}
+
+html[data-theme="space"] .nav-badge {
+  background: #251d4a;
+  color: #7e6db5;
+}
+
+html[data-theme="space"] .history-dot.search      { background: #c77dff; box-shadow: 0 0 4px rgba(199,125,255,0.6); }
+html[data-theme="space"] .history-dot.list        { background: #ff6b9d; }
+html[data-theme="space"] .history-dot.count       { background: #c77dff; }
+html[data-theme="space"] .history-dot.update      { background: #ff9e64; }
+html[data-theme="space"] .history-dot.packroll    { background: #ffe66d; }
+html[data-theme="space"] .history-dot.compare     { background: #c77dff; }
+html[data-theme="space"] .history-dot.searchdbc   { background: #72efdd; }
+html[data-theme="space"] .history-dot.comparedbc  { background: #e0aaff; }
+
+/* ── Theme toggle knob — centers in space mode ── */
+html[data-theme="space"] .toggle-knob {
+  transform: translateX(13px);
+  background: linear-gradient(135deg, #9d4edd 0%, #6b21a8 100%);
+  box-shadow: 0 0 9px rgba(157, 78, 221, 0.75), 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* ── Query bar ── */
+html[data-theme="space"] .po-input {
+  background: #0d0a24;
+  border-color: #3d3070;
+  color: #f0ecff;
+  caret-color: #c77dff;
+}
+
+html[data-theme="space"] .po-input:focus {
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15), 0 0 16px rgba(139, 92, 246, 0.12);
+}
+
+/* ── SQL preview ── */
+html[data-theme="space"] .sql-preview {
+  background: #0a0820;
+  border-color: #251d4a;
+}
+
+html[data-theme="space"] .sql-preview-header {
+  background: #120f2e;
+  border-bottom-color: #3d3070;
+}
+
+html[data-theme="space"] .sql-preview-body  { color: #c8bbf0; }
+html[data-theme="space"] .sql-kw            { color: #e0aaff; }
+html[data-theme="space"] .sql-val           { color: #72efdd; }
+html[data-theme="space"] .sql-fn            { color: #ff9e64; }
+
+/* ── Table ── */
+html[data-theme="space"] .table-wrap {
+  border-color: #251d4a;
+  background: #0d0a24;
+}
+
+html[data-theme="space"] thead th {
+  background: #120f2e;
+  border-bottom-color: #3d3070;
+  color: #c77dff;
+}
+
+html[data-theme="space"] tbody tr:hover { background: rgba(139, 92, 246, 0.05); }
+
+html[data-theme="space"] .th-group-staging { background: rgba(199,125,255,0.05); color: #e0aaff; }
+html[data-theme="space"] .th-group-ax      { background: rgba(114,239,221,0.05); color: #72efdd; }
+html[data-theme="space"] .th-group-diff    { background: rgba(255,107,157,0.04); color: #ff6b9d; }
+
+html[data-theme="space"] tr.row-mismatch    { background: rgba(255, 85, 85, 0.06); }
+html[data-theme="space"] tr.row-only-staging{ background: rgba(199, 125, 255, 0.05); }
+html[data-theme="space"] tr.row-only-ax     { background: rgba(199, 125, 255, 0.07); }
+html[data-theme="space"] td.td-mismatch     { color: #ff5555; font-weight: 600; }
+
+html[data-theme="space"] .match-ok      { background: rgba(114,239,221,0.12); color: #72efdd; border-color: rgba(114,239,221,0.3); }
+html[data-theme="space"] .match-bad     { background: rgba(255,85,85,0.12); color: #ff5555; border-color: rgba(255,85,85,0.35); }
+html[data-theme="space"] .match-staging { background: rgba(199,125,255,0.12); color: #e0aaff; border-color: rgba(199,125,255,0.3); }
+html[data-theme="space"] .match-ax      { background: rgba(199,125,255,0.12); color: #e0aaff; border-color: rgba(199,125,255,0.3); }
+
+html[data-theme="space"] .transfer-ok      { background: rgba(114,239,221,0.10); color: #72efdd; border-color: rgba(114,239,221,0.25); }
+html[data-theme="space"] .transfer-error   { background: rgba(255,107,157,0.10); color: #ff6b9d; border-color: rgba(255,107,157,0.25); }
+html[data-theme="space"] .transfer-pending { background: rgba(199,125,255,0.10); color: #c77dff; border-color: rgba(199,125,255,0.25); }
+
+html[data-theme="space"] .posted-yes { background: rgba(114,239,221,0.10); color: #72efdd; }
+html[data-theme="space"] .posted-no  { background: rgba(255,107,157,0.10); color: #ff6b9d; }
+
+/* ── Summary cards ── */
+html[data-theme="space"] .summary-card { background: #0d0a24; border-color: #251d4a; }
+html[data-theme="space"] .summary-card:hover { border-color: #5e4a9c; }
+html[data-theme="space"] .summary-card.highlight-match     { border-color: rgba(114,239,221,0.35); }
+html[data-theme="space"] .summary-card.highlight-mismatch  { border-color: rgba(255,107,157,0.35); }
+html[data-theme="space"] .summary-value.green   { color: #72efdd; text-shadow: 0 0 12px rgba(114,239,221,0.5); }
+html[data-theme="space"] .summary-value.red     { color: #ff6b9d; text-shadow: 0 0 12px rgba(255,107,157,0.5); }
+html[data-theme="space"] .summary-value.blue    { color: #c77dff; text-shadow: 0 0 12px rgba(199,125,255,0.5); }
+html[data-theme="space"] .summary-value.purple  { color: #e0aaff; }
+html[data-theme="space"] .summary-value.orange  { color: #ff9e64; }
+html[data-theme="space"] .summary-value.teal    { color: #72efdd; }
+
+/* ── State box ── */
+html[data-theme="space"] .state-box {
+  background: #0d0a24;
+  border-color: #251d4a;
+}
+
+html[data-theme="space"] .err-box {
+  background: rgba(255, 107, 157, 0.07);
+  border-color: rgba(255, 107, 157, 0.25);
+}
+
+html[data-theme="space"] .spinner {
+  border-color: #251d4a;
+  border-top-color: #c77dff;
+  box-shadow: 0 0 16px rgba(199, 125, 255, 0.3);
+}
+
+/* ── Config modal ── */
+html[data-theme="space"] .config-panel {
+  background: #0d0a24;
+  border-color: #3d3070;
+}
+
+html[data-theme="space"] .config-panel::before {
+  background: linear-gradient(90deg, #9d4edd, #c77dff, #7b2fbe, #e0aaff, #9d4edd);
+}
+
+html[data-theme="space"] .field-input {
+  background: #07051a;
+  border-color: #3d3070;
+  color: #f0ecff;
+}
+
+html[data-theme="space"] .field-input:focus {
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+}
+
+html[data-theme="space"] .config-note {
+  background: #120f2e;
+  border-color: #3d3070;
+  color: #7e6db5;
+}
+
+/* ── Scrollbar ── */
+html[data-theme="space"] ::-webkit-scrollbar-thumb {
+  background: #3d3070;
+}
+
+/* ── Run Button — purple ── */
+html[data-theme="space"] .run-btn {
+  background: linear-gradient(135deg, #9d4edd 0%, #7b2fbe 45%, #6b21a8 100%);
+  box-shadow:
+    0 2px 14px rgba(157, 78, 221, 0.45),
+    0 1px 3px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+html[data-theme="space"] .run-btn:hover {
+  box-shadow:
+    0 8px 28px rgba(157, 78, 221, 0.65),
+    0 2px 8px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+html[data-theme="space"] .run-btn:active {
+  box-shadow:
+    0 2px 12px rgba(157, 78, 221, 0.35),
+    0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+/* ── Save Button — purple ── */
+html[data-theme="space"] .save-btn {
+  background: linear-gradient(135deg, #9d4edd 0%, #6b21a8 100%);
+  box-shadow: 0 2px 14px rgba(157, 78, 221, 0.40);
+}
+
+html[data-theme="space"] .save-btn:hover {
+  box-shadow: 0 6px 22px rgba(157, 78, 221, 0.60);
+}
+
+/* ── SQL preview header accent line — purple/teal ── */
+html[data-theme="space"] .sql-preview-header::after {
+  background: linear-gradient(90deg,
+    #251d4a 0%,
+    rgba(199, 125, 255, 0.55) 30%,
+    rgba(114, 239, 221, 0.35) 70%,
+    #251d4a 100%);
+}
+
+/* ── Active nav items — space palette gradients ── */
+html[data-theme="space"] .nav-item.active-search {
+  background: linear-gradient(90deg, rgba(199, 125, 255, 0.13) 0%, transparent 75%);
+  box-shadow: inset 2px 0 10px rgba(199, 125, 255, 0.08);
+}
+
+html[data-theme="space"] .nav-item.active-list {
+  background: linear-gradient(90deg, rgba(255, 107, 157, 0.11) 0%, transparent 75%);
+  box-shadow: inset 2px 0 10px rgba(255, 107, 157, 0.06);
+}
+
+html[data-theme="space"] .nav-item.active-count {
+  background: linear-gradient(90deg, rgba(199, 125, 255, 0.11) 0%, transparent 75%);
+  box-shadow: inset 2px 0 10px rgba(199, 125, 255, 0.06);
+}
+
+html[data-theme="space"] .nav-item.active-update,
+html[data-theme="space"] .nav-item.active-packroll {
+  background: linear-gradient(90deg, rgba(255, 158, 100, 0.11) 0%, transparent 75%);
+  box-shadow: inset 2px 0 10px rgba(255, 158, 100, 0.06);
+}
+
+html[data-theme="space"] .nav-item.active-compare {
+  background: linear-gradient(90deg, rgba(114, 239, 221, 0.11) 0%, transparent 75%);
+  box-shadow: inset 2px 0 10px rgba(114, 239, 221, 0.06);
+}
+
+html[data-theme="space"] .nav-item.active-check {
+  background: linear-gradient(90deg, rgba(114, 239, 221, 0.11) 0%, transparent 75%);
+  box-shadow: inset 2px 0 10px rgba(114, 239, 221, 0.06);
+}
+
+html[data-theme="space"] .nav-item.active-updatestaging {
+  background: linear-gradient(90deg, rgba(255, 230, 109, 0.11) 0%, transparent 75%);
+  box-shadow: inset 2px 0 10px rgba(255, 230, 109, 0.06);
+}
+
+html[data-theme="space"] .nav-item.active-searchdbc {
+  background: linear-gradient(90deg, rgba(114, 239, 221, 0.11) 0%, transparent 75%);
+  box-shadow: inset 2px 0 10px rgba(114, 239, 221, 0.06);
+}
+
+html[data-theme="space"] .nav-item.active-comparedbc {
+  background: linear-gradient(90deg, rgba(224, 170, 255, 0.11) 0%, transparent 75%);
+  box-shadow: inset 2px 0 10px rgba(224, 170, 255, 0.06);
+}
