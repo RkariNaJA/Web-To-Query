@@ -20,6 +20,11 @@ function applyDBCHeaderFilter() {
       return v === '—' ? `<td class="td-dim">—</td>` : `<td>${v}</td>`;
     }).join('') + '</tr>'
   ).join('');
+
+  const hCount = document.getElementById('dbc-summary-header-count');
+  if (hCount) hCount.textContent = filtered.length;
+  const hMeta = document.getElementById('dbc-meta-header-count');
+  if (hMeta) hMeta.textContent = `${filtered.length} Header`;
 }
 
 function applyDBCLinesFilter() {
@@ -57,6 +62,17 @@ function applyDBCLinesFilter() {
       return v === '—' ? `<td class="td-dim">—</td>` : `<td>${v}</td>`;
     }).join('') + '</tr>'
   ).join('');
+
+  const lCount = document.getElementById('dbc-summary-lines-count');
+  if (lCount) lCount.textContent = filtered.length;
+  const lTotalQty = filtered.reduce((s, r) => s + (parseFloat(r.PURCHQTY || 0) || 0), 0);
+  const lTotalAmt = filtered.reduce((s, r) => s + (parseFloat(r.LINEAMOUNT || 0) || 0), 0);
+  const qtyEl = document.getElementById('dbc-summary-totalqty');
+  if (qtyEl) qtyEl.textContent = parseFloat(lTotalQty).toLocaleString();
+  const amtEl = document.getElementById('dbc-summary-totalamt');
+  if (amtEl) amtEl.textContent = parseFloat(lTotalAmt).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const lMeta = document.getElementById('dbc-meta-lines-count');
+  if (lMeta) lMeta.textContent = `${filtered.length} Lines`;
 }
 
 // ── Search PO Filter ───────────────────────────────────────────────
@@ -100,6 +116,19 @@ function applySearchFilter() {
 
   const lineCount = document.getElementById('search-line-count');
   if (lineCount) lineCount.textContent = filtered.length;
+
+  const fOkCount = filtered.filter(r => parseInt(getVal(r, 'TRANSFERSTATUS')) === 1).length;
+  const fErrCount = filtered.filter(r => parseInt(getVal(r, 'TRANSFERSTATUS')) === 2).length;
+  const fTotalQty = filtered.reduce((s, r) => s + (parseFloat(getVal(r, 'PURCHQTY') || 0) || 0), 0);
+  const fTotalAmt = filtered.reduce((s, r) => s + (parseFloat(getVal(r, 'LINEAMOUNT') || 0) || 0), 0);
+  const completedEl = document.getElementById('search-summary-completed');
+  if (completedEl) completedEl.textContent = fOkCount;
+  const errorsEl = document.getElementById('search-summary-errors');
+  if (errorsEl) { errorsEl.textContent = fErrCount; errorsEl.className = `summary-value ${fErrCount > 0 ? 'red' : 'green'}`; }
+  const sqtyEl = document.getElementById('search-summary-qty');
+  if (sqtyEl) sqtyEl.textContent = parseFloat(fTotalQty).toLocaleString();
+  const samtEl = document.getElementById('search-summary-amt');
+  if (samtEl) samtEl.textContent = parseFloat(fTotalAmt).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 // ── PO Line (AX) Filter ────────────────────────────────────────────
@@ -145,6 +174,13 @@ function applyCountFilter() {
 
   const lineCount = document.getElementById('count-line-count');
   if (lineCount) lineCount.textContent = filtered.length;
+
+  const fQty = filtered.reduce((s, r) => s + (parseFloat(getVal(r, 'PURCHQTY') || getVal(r, 'QTY') || 0) || 0), 0);
+  const fAmt = filtered.reduce((s, r) => s + (parseFloat(getVal(r, 'LINEAMOUNT') || getVal(r, 'Net amount') || 0) || 0), 0);
+  const cqtyEl = document.getElementById('count-summary-qty');
+  if (cqtyEl) cqtyEl.textContent = parseFloat(fQty).toLocaleString();
+  const camtEl = document.getElementById('count-summary-amt');
+  if (camtEl) camtEl.textContent = parseFloat(fAmt).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 // ── QTY Pack/Roll Filter ───────────────────────────────────────────
@@ -185,6 +221,23 @@ function applyPackrollFilter() {
   const poDisplay = document.getElementById('packroll-po-display');
   if (poDisplay) {
     const pos = [...new Set(filtered.map(r => getVal(r, 'PURCHID')).filter(v => v != null && v !== ''))].sort();
-    poDisplay.textContent = pos.length ? pos.join(', ') : '—';
+    const missing = (lastPackrollQueriedPOs || []).filter(p => !pos.includes(p));
+    poDisplay.innerHTML = [
+      ...pos.map(p => `<span style="color:var(--accent);">${p}</span>`),
+      ...missing.map(p => `<span style="color:var(--red);font-weight:600;" title="Not found in output">⚠ ${p}</span>`)
+    ].join(', ') || '—';
   }
+
+  const pQty = filtered.reduce((s, r) => s + (parseFloat(getVal(r, 'Quantity') || 0) || 0), 0);
+  const pReceived = filtered.reduce((s, r) => s + (parseFloat(getVal(r, 'Received') || 0) || 0), 0);
+  const pRemainder = filtered.reduce((s, r) => {
+    const val = getVal(r, 'DELIVER_REMAINDER') || getVal(r, 'Deliver Remainder') || 0;
+    return s + (parseFloat(val) || 0);
+  }, 0);
+  const pqtyEl = document.getElementById('packroll-summary-qty');
+  if (pqtyEl) pqtyEl.textContent = parseFloat(pQty).toLocaleString();
+  const preceivedEl = document.getElementById('packroll-summary-received');
+  if (preceivedEl) preceivedEl.textContent = parseFloat(pReceived).toLocaleString();
+  const premainderEl = document.getElementById('packroll-summary-remainder');
+  if (premainderEl) { premainderEl.textContent = parseFloat(pRemainder).toLocaleString(); premainderEl.className = `summary-value ${pRemainder > 0 ? 'orange' : 'green'}`; }
 }

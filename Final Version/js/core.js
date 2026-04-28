@@ -36,6 +36,7 @@ let lastCheckRows = [];
 let lastCountRows = [];
 let lastSearchRows = [];
 let lastPackrollRows = [];
+let lastPackrollQueriedPOs = [];
 let lastCompareData = { stagingRows: [], axRows: [] };
 let lastSearchDBCData = { header: [], lines: [] };
 let lastCompareDBC = { stagingRows: [], dbcLines: [] };

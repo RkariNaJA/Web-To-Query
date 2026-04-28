@@ -111,10 +111,10 @@ function renderResults(rows, po, serverTotalQty, serverTotalAmount, raw = {}) {
       </div>`;
     summaryHTML = `<div class="summary-row">
       <div class="summary-card"><div class="summary-label">Total Lines</div><div class="summary-value blue" id="search-line-count">${rows.length}</div></div>
-      <div class="summary-card"><div class="summary-label">Completed</div><div class="summary-value green">${okCount}</div></div>
-      <div class="summary-card"><div class="summary-label">Errors</div><div class="summary-value ${errCount > 0 ? 'red' : 'green'}">${errCount}</div></div>
-      <div class="summary-card"><div class="summary-label">Total Qty</div><div class="summary-value">${parseFloat(totalQty).toLocaleString()}</div></div>
-      <div class="summary-card"><div class="summary-label">Total Amount</div><div class="summary-value">${parseFloat(totalAmt).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div></div>
+      <div class="summary-card"><div class="summary-label">Completed</div><div class="summary-value green" id="search-summary-completed">${okCount}</div></div>
+      <div class="summary-card"><div class="summary-label">Errors</div><div class="summary-value ${errCount > 0 ? 'red' : 'green'}" id="search-summary-errors">${errCount}</div></div>
+      <div class="summary-card"><div class="summary-label">Total Qty</div><div class="summary-value" id="search-summary-qty">${parseFloat(totalQty).toLocaleString()}</div></div>
+      <div class="summary-card"><div class="summary-label">Total Amount</div><div class="summary-value" id="search-summary-amt">${parseFloat(totalAmt).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div></div>
     </div>
     <div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;padding:10px 0 4px;">
       ${mkSearchSelect('search-filter-color', 'Color', uniqSearchOpts('INVENTCOLORID'))}
@@ -189,8 +189,8 @@ function renderResults(rows, po, serverTotalQty, serverTotalAmount, raw = {}) {
     summaryHTML = `
       <div class="summary-row">
         <div class="summary-card"><div class="summary-label">Total Lines</div><div class="summary-value purple" id="count-line-count">${rows.length}</div></div>
-        <div class="summary-card"><div class="summary-label">Total QTY</div><div class="summary-value blue">${parseFloat(totalQty).toLocaleString()}</div></div>
-        <div class="summary-card"><div class="summary-label">Total Net Amount</div><div class="summary-value">${parseFloat(totalAmt).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div></div>
+        <div class="summary-card"><div class="summary-label">Total QTY</div><div class="summary-value blue" id="count-summary-qty">${parseFloat(totalQty).toLocaleString()}</div></div>
+        <div class="summary-card"><div class="summary-label">Total Net Amount</div><div class="summary-value" id="count-summary-amt">${parseFloat(totalAmt).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div></div>
       </div>
       <div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;padding:10px 0 4px;">
         ${mkSelect('filter-color', 'Color', uniqOpts('IVZ_COLOR_CT'))}
@@ -256,11 +256,18 @@ function renderResults(rows, po, serverTotalQty, serverTotalAmount, raw = {}) {
     }, 0);
     const uniqItemIds = [...new Set(rows.map(r => getVal(r, 'ITEMID')).filter(v => v != null && v !== ''))].sort();
     const uniqPurchIds = [...new Set(rows.map(r => getVal(r, 'PURCHID')).filter(v => v != null && v !== ''))].sort();
+    const packrollQueriedPOs = po.split(',').map(s => s.trim()).filter(Boolean);
+    const packrollMissingPOs = packrollQueriedPOs.filter(p => !uniqPurchIds.includes(p));
+    lastPackrollQueriedPOs = packrollQueriedPOs;
+    const poDisplayContent = [
+      ...uniqPurchIds.map(p => `<span style="color:var(--accent);">${p}</span>`),
+      ...packrollMissingPOs.map(p => `<span style="color:var(--red);font-weight:600;" title="Not found in output">⚠ ${p}</span>`)
+    ].join(', ') || '—';
     summaryHTML = `<div class="summary-row">
       <div class="summary-card"><div class="summary-label">Total Lines</div><div class="summary-value teal" id="packroll-line-count">${rows.length}</div></div>
-      <div class="summary-card"><div class="summary-label">Total Quantity</div><div class="summary-value blue">${parseFloat(totalQty).toLocaleString()}</div></div>
-      <div class="summary-card"><div class="summary-label">Total Received</div><div class="summary-value green">${parseFloat(totalReceived).toLocaleString()}</div></div>
-      <div class="summary-card"><div class="summary-label">Deliver Remainder</div><div class="summary-value ${totalRemainder > 0 ? 'orange' : 'green'}">${parseFloat(totalRemainder).toLocaleString()}</div></div>
+      <div class="summary-card"><div class="summary-label">Total Quantity</div><div class="summary-value blue" id="packroll-summary-qty">${parseFloat(totalQty).toLocaleString()}</div></div>
+      <div class="summary-card"><div class="summary-label">Total Received</div><div class="summary-value green" id="packroll-summary-received">${parseFloat(totalReceived).toLocaleString()}</div></div>
+      <div class="summary-card"><div class="summary-label">Deliver Remainder</div><div class="summary-value ${totalRemainder > 0 ? 'orange' : 'green'}" id="packroll-summary-remainder">${parseFloat(totalRemainder).toLocaleString()}</div></div>
     </div>
     <div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;padding:10px 0 4px;">
       <div style="display:flex;flex-direction:column;gap:4px;">
@@ -274,7 +281,7 @@ function renderResults(rows, po, serverTotalQty, serverTotalAmount, raw = {}) {
       <div style="display:flex;flex-direction:column;gap:4px;">
         <div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);letter-spacing:0.06em;text-transform:uppercase;">PO</div>
         <div id="packroll-po-display"
-          style="background:var(--surface2);border:1px solid var(--border);color:var(--accent);font-family:var(--mono);font-size:11px;padding:5px 10px;border-radius:6px;min-width:120px;letter-spacing:0.04em;">${uniqPurchIds.join(', ') || '—'}</div>
+          style="background:var(--surface2);border:1px solid var(--border);font-family:var(--mono);font-size:11px;padding:5px 10px;border-radius:6px;min-width:120px;letter-spacing:0.04em;">${poDisplayContent}</div>
       </div>
       <button onclick="document.getElementById('packroll-filter-itemid').value='';applyPackrollFilter();"
         style="align-self:flex-end;padding:5px 12px;background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);font-family:var(--mono);font-size:11px;border-radius:6px;cursor:pointer;">✕ Clear</button>
@@ -288,10 +295,19 @@ function renderResults(rows, po, serverTotalQty, serverTotalAmount, raw = {}) {
     </div>`;
   }
 
+  let missingPOsHTML = '';
+  if (mode === 'update' || mode === 'packroll') {
+    const qPOs = po.split(',').map(s => s.trim()).filter(Boolean);
+    const rPOs = [...new Set(rows.map(r => getVal(r, 'PURCHID')).filter(v => v != null && v !== ''))];
+    const missing = qPOs.filter(p => !rPOs.includes(p));
+    if (missing.length > 0) {
+      missingPOsHTML = ` <span style="color:var(--red);font-size:11px;font-family:var(--mono);">⚠&nbsp;${missing.map(p => `<span style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);padding:1px 6px;border-radius:4px;font-weight:600;">${p}</span>`).join('&nbsp;')}</span>`;
+    }
+  }
   area.innerHTML = `
     ${summaryHTML}
     <div class="results-meta">
-      <span class="results-count">Showing <strong>${rows.length}</strong> row${rows.length !== 1 ? 's' : ''} for PO <strong>${po}</strong></span>
+      <span class="results-count">Showing <strong>${rows.length}</strong> row${rows.length !== 1 ? 's' : ''} for PO <strong>${po}</strong>${missingPOsHTML}</span>
       <span class="tag ${modeInfo.tagClass}">${modeInfo.label}</span>
       <button onclick="exportToExcel()" style="margin-left:auto;padding:5px 14px;background:var(--surface2);border:1px solid var(--green);color:var(--green);font-family:var(--mono);font-size:11px;border-radius:6px;cursor:pointer;letter-spacing:0.05em;font-weight:600;transition:all 0.15s;" onmouseover="this.style.background='var(--green-glow)'" onmouseout="this.style.background='var(--surface2)'">⬇ Export Excel</button>
     </div>

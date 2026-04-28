@@ -23,10 +23,10 @@ function renderSearchDBC(raw, po) {
 
   const summaryHTML = `
     <div class="summary-row">
-      <div class="summary-card"><div class="summary-label">Header Rows</div><div class="summary-value" style="color:#38bdf8;">${header.length}</div></div>
-      <div class="summary-card"><div class="summary-label">Line Rows</div><div class="summary-value blue">${lines.length}</div></div>
-      <div class="summary-card"><div class="summary-label">Total Qty</div><div class="summary-value">${parseFloat(totalQty).toLocaleString()}</div></div>
-      <div class="summary-card"><div class="summary-label">Total Amount</div><div class="summary-value">${parseFloat(totalAmt).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div></div>
+      <div class="summary-card"><div class="summary-label">Header Rows</div><div class="summary-value" style="color:#38bdf8;" id="dbc-summary-header-count">${header.length}</div></div>
+      <div class="summary-card"><div class="summary-label">Line Rows</div><div class="summary-value blue" id="dbc-summary-lines-count">${lines.length}</div></div>
+      <div class="summary-card"><div class="summary-label">Total Qty</div><div class="summary-value" id="dbc-summary-totalqty">${parseFloat(totalQty).toLocaleString()}</div></div>
+      <div class="summary-card"><div class="summary-label">Total Amount</div><div class="summary-value" id="dbc-summary-totalamt">${parseFloat(totalAmt).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div></div>
     </div>`;
 
   const headerCols = ['CREATED', 'EXPORTED', 'STATUS', 'VENDOR AX', 'COMPANY', 'PURCHID', 'ORDER ACCT', 'INVOICE ACCT', 'CURRENCY'];
@@ -68,8 +68,8 @@ function renderSearchDBC(raw, po) {
     ${summaryHTML}
     <div class="results-meta">
       <span class="results-count">PO <strong>${po}</strong> —
-        <span style="color:#38bdf8">${header.length} Header</span> ·
-        <span style="color:var(--accent)">${lines.length} Lines</span>
+        <span style="color:#38bdf8" id="dbc-meta-header-count">${header.length} Header</span> ·
+        <span style="color:var(--accent)" id="dbc-meta-lines-count">${lines.length} Lines</span>
       </span>
       <span class="tag tag-searchdbc">SEARCH PO DBC</span>
       <button onclick="exportDBCToExcel()" style="margin-left:auto;padding:5px 14px;background:var(--surface2);border:1px solid var(--green);color:var(--green);font-family:var(--mono);font-size:11px;border-radius:6px;cursor:pointer;letter-spacing:0.05em;font-weight:600;transition:all 0.15s;" onmouseover="this.style.background='var(--green-glow)'" onmouseout="this.style.background='var(--surface2)'">&#11015; Export Excel</button>
