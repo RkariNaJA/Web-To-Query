@@ -57,7 +57,7 @@ main {
   font-family: var(--mono);
   font-size: 13.5px;
   font-weight: 500;
-  color: var(--text-primary);
+  color: #ffffff;
   outline: none;
   transition: border-color 0.22s ease, box-shadow 0.22s ease, background 0.22s ease;
   letter-spacing: 0.06em;

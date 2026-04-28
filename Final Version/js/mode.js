@@ -5,9 +5,18 @@ function setMode(m) {
     const el = document.getElementById('nav-' + id);
     if (el) el.className = 'nav-item' + (m === id ? ' ' + MODES[id].navClass : '');
   });
+  localStorage.setItem('po_mode', m);
   const isUpdate = m === 'updatestaging';
+  const isItem   = m === 'item';
   document.getElementById('exec-input-wrap').style.display = isUpdate ? 'flex' : 'none';
-  document.getElementById('query-bar-label').textContent = isUpdate ? 'Purchase Order Number & Execution ID' : 'Purchase Order Number';
+  ['item-size-wrap', 'item-color-wrap', 'item-style-wrap', 'item-company-wrap'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = isItem ? 'flex' : 'none';
+  });
+  document.getElementById('po-prefix').textContent = isItem ? 'ITEM_ID ›' : 'PO_ID ›';
+  document.getElementById('po-input').placeholder   = isItem ? 'e.g. PSKNI701890' : 'e.g. CDHN26HTI020034';
+  const labelMap = { updatestaging: 'Purchase Order Number & Execution ID', item: 'Item ID · Size · Color · Style · Company' };
+  document.getElementById('query-bar-label').textContent = labelMap[m] || 'Purchase Order Number';
   updateSQLPreview();
 }
 
@@ -97,6 +106,20 @@ ${kw('SELECT')} LINENUMBER, CREATEDATETIME, EXPORTDATETIME, STATUS,ITEMID,
        SEASON, COLORID, COLORNAME, SIZEIDFABRIC, SIZEID, COMPANY, SITEID, LOCATIONID
 ${kw('FROM')} PO_LINES_DBC
 ${kw('WHERE')} PURCHID ${kw('=')} ${vl("'" + po + "'")};`;
+  } else if (mode === 'item') {
+    const size    = document.getElementById('item-size-input')?.value.trim()    || '?';
+    const color   = document.getElementById('item-color-input')?.value.trim()   || '?';
+    const season  = document.getElementById('item-style-input')?.value.trim()   || '?';
+    const company = document.getElementById('item-company-input')?.value.trim() || '?';
+    el.innerHTML = `${kw('SELECT')} ITEMID, INVENTSIZEID, INVENTCOLORID, INVENTSTYLEID,
+       i.DATAAREAID ${kw('AS')} [Company]
+${kw('FROM')} INVENTDIM d
+${kw('LEFT JOIN')} INVENTDIMCOMBINATION i ${kw('ON')} i.INVENTDIMID ${kw('=')} d.INVENTDIMID
+${kw('WHERE')} i.ITEMID ${kw('=')} ${vl("'" + po + "'")}
+  ${kw('AND')} INVENTSIZEID ${kw('=')} ${vl("'" + size + "'")}
+  ${kw('AND')} INVENTCOLORID ${kw('=')} ${vl("'" + color + "'")}
+  ${kw('AND')} INVENTSTYLEID ${kw('=')} ${vl("'" + season + "'")}
+  ${kw('AND')} i.DATAAREAID ${kw('=')} ${vl("'" + company + "'")};`;
   } else if (mode === 'compare') {
     el.innerHTML = `<span style="color:var(--accent)">── QUERY 1 (Staging)</span>
 ${kw('SELECT')} LINENUMBER, ITEMID, INVENTSIZEID, INVENTCOLORID, PURCHQTY, PURCHPRICE, LINEAMOUNT, TRANSFERSTATUS
@@ -124,4 +147,11 @@ document.getElementById('po-input').addEventListener('input', () => {
 
 document.getElementById('exec-input').addEventListener('input', () => {
   updateSQLPreview();
+});
+
+['item-size-input', 'item-color-input', 'item-style-input', 'item-company-input'].forEach(id => {
+  document.getElementById(id).addEventListener('input', () => {
+    localStorage.setItem('po_' + id, document.getElementById(id).value);
+    updateSQLPreview();
+  });
 });

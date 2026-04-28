@@ -1,3 +1,43 @@
+// ── Check Item On AX Filter ────────────────────────────────────────
+function applyItemFilter() {
+  const tbody = document.getElementById('item-tbody');
+  if (!tbody || !lastItemRows.length) return;
+
+  const fSize    = document.getElementById('item-filter-size')?.value    || '';
+  const fColor   = document.getElementById('item-filter-color')?.value   || '';
+  const fStyle   = document.getElementById('item-filter-style')?.value   || '';
+  const fCompany = document.getElementById('item-filter-company')?.value || '';
+
+  const filtered = lastItemRows.filter(r => {
+    if (fSize    && getVal(r, 'INVENTSIZEID')  !== fSize)    return false;
+    if (fColor   && getVal(r, 'INVENTCOLORID') !== fColor)   return false;
+    if (fStyle   && getVal(r, 'INVENTSTYLEID') !== fStyle)   return false;
+    if (fCompany && getVal(r, 'Company')       !== fCompany) return false;
+    return true;
+  });
+
+  const colKeys = ['ITEMID', 'INVENTSIZEID', 'INVENTCOLORID', 'INVENTSTYLEID', 'Company'];
+  tbody.innerHTML = filtered.map(r =>
+    '<tr>' + colKeys.map(k => {
+      const v = r[k] != null && r[k] !== '' ? r[k] : '—';
+      return v === '—' ? `<td class="td-dim">—</td>` : `<td>${v}</td>`;
+    }).join('') + '</tr>'
+  ).join('');
+
+  const lineCount = document.getElementById('item-line-count');
+  if (lineCount) lineCount.textContent = filtered.length;
+
+  const uniqSizes   = [...new Set(filtered.map(r => getVal(r, 'INVENTSIZEID')).filter(v => v != null && v !== ''))];
+  const uniqColors  = [...new Set(filtered.map(r => getVal(r, 'INVENTCOLORID')).filter(v => v != null && v !== ''))];
+  const uniqStyles  = [...new Set(filtered.map(r => getVal(r, 'INVENTSTYLEID')).filter(v => v != null && v !== ''))];
+  const sizesEl   = document.getElementById('item-summary-sizes');
+  const colorsEl  = document.getElementById('item-summary-colors');
+  const stylesEl  = document.getElementById('item-summary-styles');
+  if (sizesEl)  sizesEl.textContent  = uniqSizes.length;
+  if (colorsEl) colorsEl.textContent = uniqColors.length;
+  if (stylesEl) stylesEl.textContent = uniqStyles.length;
+}
+
 // ── Search PO DBC Filter ───────────────────────────────────────────
 function applyDBCHeaderFilter() {
   const tbody = document.getElementById('searchdbc-header-tbody');

@@ -15,10 +15,10 @@ function fmt(v, decimals = 2) {
 }
 
 // ── Fetch helper ───────────────────────────────────────────────────
-async function fetchQuery(queryType, po, execId = null) {
+async function fetchQuery(queryType, po, execId = null, extraBody = {}) {
   const headers = { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' };
   if (cfg.auth) headers['Authorization'] = cfg.auth;
-  const body = { queryType, searchKeyword: po };
+  const body = { queryType, searchKeyword: po, ...extraBody };
   if (execId) body.executionId = execId;
   const res = await fetch(cfg.webhook, {
     method: 'POST',

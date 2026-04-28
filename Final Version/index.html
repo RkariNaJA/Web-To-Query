@@ -65,6 +65,10 @@
         <span class="nav-icon">≡</span> PO Line (AX)
         <span class="nav-badge" id="badge-count">—</span>
       </div>
+      <div class="nav-item" id="nav-item" onclick="setMode('item')">
+        <span class="nav-icon">◈</span> Check Item On AX
+        <span class="nav-badge" id="badge-item">—</span>
+      </div>
       <div class="nav-item" id="nav-update" onclick="setMode('update')">
         <span class="nav-icon">⊞</span> Pack / Roll
         <span class="nav-badge" id="badge-update">—</span>
@@ -107,13 +111,33 @@
         <div class="query-bar-label" id="query-bar-label">Purchase Order Number</div>
         <div class="query-row">
           <div class="po-input-wrap">
-            <span class="po-prefix">PO_ID ›</span>
+            <span class="po-prefix" id="po-prefix">PO_ID ›</span>
             <input class="po-input" id="po-input" type="text" placeholder="e.g. CDHN26HTI020034"
               autocomplete="off" spellcheck="false" onkeydown="if(event.key==='Enter') runQuery()" />
           </div>
           <div class="po-input-wrap" id="exec-input-wrap" style="display:none;">
             <span class="po-prefix">EXEC_ID ›</span>
             <input class="po-input" id="exec-input" type="text" placeholder="e.g. BotPO_20240101_001"
+              autocomplete="off" spellcheck="false" onkeydown="if(event.key==='Enter') runQuery()" />
+          </div>
+          <div class="po-input-wrap" id="item-size-wrap" style="display:none;flex:0 1 150px;max-width:150px;">
+            <span class="po-prefix">SIZE ›</span>
+            <input class="po-input" id="item-size-input" type="text" placeholder="e.g. M"
+              autocomplete="off" spellcheck="false" onkeydown="if(event.key==='Enter') runQuery()" />
+          </div>
+          <div class="po-input-wrap" id="item-color-wrap" style="display:none;flex:0 1 150px;max-width:150px;">
+            <span class="po-prefix">COLOR ›</span>
+            <input class="po-input" id="item-color-input" type="text" placeholder="e.g. 616"
+              autocomplete="off" spellcheck="false" onkeydown="if(event.key==='Enter') runQuery()" />
+          </div>
+          <div class="po-input-wrap" id="item-style-wrap" style="display:none;flex:0 1 150px;max-width:150px;">
+            <span class="po-prefix">SEASON ›</span>
+            <input class="po-input" id="item-style-input" type="text" placeholder="e.g. FA26"
+              autocomplete="off" spellcheck="false" onkeydown="if(event.key==='Enter') runQuery()" />
+          </div>
+          <div class="po-input-wrap" id="item-company-wrap" style="display:none;flex:0 1 140px;max-width:140px;">
+            <span class="po-prefix">COMPANY ›</span>
+            <input class="po-input" id="item-company-input" type="text" placeholder="e.g. HT"
               autocomplete="off" spellcheck="false" onkeydown="if(event.key==='Enter') runQuery()" />
           </div>
           <button class="run-btn" id="run-btn" onclick="runQuery()">▶ RUN</button>

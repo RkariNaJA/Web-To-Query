@@ -4,14 +4,15 @@ function renderResults(rows, po, serverTotalQty, serverTotalAmount, raw = {}) {
   const modeInfo = MODES[mode] ?? { label: mode.toUpperCase(), tagClass: 'tag-update', navClass: 'active-update' };
 
   if (rows.length === 0) {
-    const icons = { search: '⊘', list: '✅', count: '⊘', update: '⊘', packroll: '⊘', check: '⊘' };
+    const icons = { search: '⊘', list: '✅', count: '⊘', update: '⊘', packroll: '⊘', check: '⊘', item: '⊘' };
     const msgs = {
       search: `No staging data found for PO <strong>${po}</strong>.`,
       list: `✅ No errors — all lines transferred successfully for PO <strong>${po}</strong>.`,
       count: `No PO lines found in AX for PO <strong>${po}</strong>.`,
       update: `No Pack/Roll records found for PO <strong>${po}</strong>.`,
       packroll: `No QTY Pack/Roll lines found for PO <strong>${po}</strong>.`,
-      check: `No BotPO data found for PO <strong>${po}</strong>.`
+      check: `No BotPO data found for PO <strong>${po}</strong>.`,
+      item: `No variants found for Item ID <strong>${po}</strong>.`
     };
     area.innerHTML = `
       <div class="state-box" style="border-style:solid;border-color:${mode === 'list' ? 'rgba(62,207,142,0.3)' : 'var(--border)'};">
@@ -42,8 +43,11 @@ function renderResults(rows, po, serverTotalQty, serverTotalAmount, raw = {}) {
   } else if (mode === 'packroll') {
     cols = ['LINE', 'PURCHID', 'ITEM ID', 'QUANTITY', 'RECEIVED', 'Deliver_Remainder', 'ORDERED', 'Invent_Unit_QTY', 'Compare_O_I', 'Compare_Q_R'];
     colKeys = ['LINENUMBER', 'PURCHID', 'ITEMID', 'Quantity', 'Received', 'Deliver_Remainder', 'Ordered', 'Invent_Unit_QTY', 'Compare_O_I', 'Compare_Q_R'];
+  } else if (mode === 'item') {
+    cols = ['ITEM ID', 'SIZE', 'COLOR', 'SEASON', 'COMPANY'];
+    colKeys = ['ITEMID', 'INVENTSIZEID', 'INVENTCOLORID', 'INVENTSTYLEID', 'Company'];
   } else {
-    cols = ['ARRIVAL NUM', 'PO', 'LOCATION', 'SITE', 'CREATED', 'POSTED DATE', 'POSTED', 'CREATED BY'];
+    cols = ['ARRIVAL NUM', 'PO', 'LOCATIONID', 'SITE', 'CREATED', 'POSTED DATE', 'POSTED', 'CREATED BY'];
     colKeys = ['ITEMARRIVALNUM', 'PURCHID', 'INVENTLOCATIONID', 'INVENTSITEID', 'CREATEDDATETIME', 'POSTEDDATETIME', 'POSTED', 'CREATEDBY'];
   }
 
@@ -286,6 +290,35 @@ function renderResults(rows, po, serverTotalQty, serverTotalAmount, raw = {}) {
       <button onclick="document.getElementById('packroll-filter-itemid').value='';applyPackrollFilter();"
         style="align-self:flex-end;padding:5px 12px;background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);font-family:var(--mono);font-size:11px;border-radius:6px;cursor:pointer;">✕ Clear</button>
     </div>`;
+  } else if (mode === 'item') {
+    lastItemRows = rows;
+    const uniqSizes = [...new Set(rows.map(r => getVal(r, 'INVENTSIZEID')).filter(v => v != null && v !== ''))].sort();
+    const uniqColors = [...new Set(rows.map(r => getVal(r, 'INVENTCOLORID')).filter(v => v != null && v !== ''))].sort();
+    const uniqStyles = [...new Set(rows.map(r => getVal(r, 'INVENTSTYLEID')).filter(v => v != null && v !== ''))].sort();
+    const uniqCompanies = [...new Set(rows.map(r => getVal(r, 'Company')).filter(v => v != null && v !== ''))].sort();
+    const mkItemSelect = (id, label, opts) => `
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);letter-spacing:0.06em;text-transform:uppercase;">${label}</div>
+        <select id="${id}" onchange="applyItemFilter()"
+          style="background:var(--surface2);border:1px solid var(--border);color:var(--text-primary);font-family:var(--mono);font-size:11px;padding:5px 8px;border-radius:6px;cursor:pointer;min-width:110px;">
+          <option value="">All</option>
+          ${opts.map(v => `<option value="${v}">${v}</option>`).join('')}
+        </select>
+      </div>`;
+    summaryHTML = `<div class="summary-row">
+      <div class="summary-card"><div class="summary-label">Total Rows</div><div class="summary-value pink" id="item-line-count">${rows.length}</div></div>
+      <div class="summary-card"><div class="summary-label">Sizes Found</div><div class="summary-value" id="item-summary-sizes">${uniqSizes.length}</div></div>
+      <div class="summary-card"><div class="summary-label">Colors Found</div><div class="summary-value" id="item-summary-colors">${uniqColors.length}</div></div>
+      <div class="summary-card"><div class="summary-label">Styles Found</div><div class="summary-value" id="item-summary-styles">${uniqStyles.length}</div></div>
+    </div>
+    <div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;padding:10px 0 4px;">
+      ${mkItemSelect('item-filter-size', 'Size', uniqSizes)}
+      ${mkItemSelect('item-filter-color', 'Color', uniqColors)}
+      ${mkItemSelect('item-filter-style', 'Season', uniqStyles)}
+      ${mkItemSelect('item-filter-company', 'Company', uniqCompanies)}
+      <button onclick="document.getElementById('item-filter-size').value='';document.getElementById('item-filter-color').value='';document.getElementById('item-filter-style').value='';document.getElementById('item-filter-company').value='';applyItemFilter();"
+        style="align-self:flex-end;padding:5px 12px;background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);font-family:var(--mono);font-size:11px;border-radius:6px;cursor:pointer;">✕ Clear</button>
+    </div>`;
   } else {
     const posted = rows.filter(r => parseInt(r.POSTED) === 1).length;
     summaryHTML = `<div class="summary-row">
@@ -295,6 +328,7 @@ function renderResults(rows, po, serverTotalQty, serverTotalAmount, raw = {}) {
     </div>`;
   }
 
+  const poLabel = mode === 'item' ? 'Item ID' : 'PO';
   let missingPOsHTML = '';
   if (mode === 'update' || mode === 'packroll') {
     const qPOs = po.split(',').map(s => s.trim()).filter(Boolean);
@@ -307,14 +341,14 @@ function renderResults(rows, po, serverTotalQty, serverTotalAmount, raw = {}) {
   area.innerHTML = `
     ${summaryHTML}
     <div class="results-meta">
-      <span class="results-count">Showing <strong>${rows.length}</strong> row${rows.length !== 1 ? 's' : ''} for PO <strong>${po}</strong>${missingPOsHTML}</span>
+      <span class="results-count">Showing <strong>${rows.length}</strong> row${rows.length !== 1 ? 's' : ''} for ${poLabel} <strong>${po}</strong>${missingPOsHTML}</span>
       <span class="tag ${modeInfo.tagClass}">${modeInfo.label}</span>
       <button onclick="exportToExcel()" style="margin-left:auto;padding:5px 14px;background:var(--surface2);border:1px solid var(--green);color:var(--green);font-family:var(--mono);font-size:11px;border-radius:6px;cursor:pointer;letter-spacing:0.05em;font-weight:600;transition:all 0.15s;" onmouseover="this.style.background='var(--green-glow)'" onmouseout="this.style.background='var(--surface2)'">⬇ Export Excel</button>
     </div>
     <div class="table-wrap">
       <table>
         <thead><tr>${cols.map(c => `<th>${c}</th>`).join('')}</tr></thead>
-        <tbody id="${mode === 'count' ? 'count-tbody' : mode === 'search' ? 'search-tbody' : mode === 'packroll' ? 'packroll-tbody' : ''}">${rows_html}</tbody>
+        <tbody id="${mode === 'count' ? 'count-tbody' : mode === 'search' ? 'search-tbody' : mode === 'packroll' ? 'packroll-tbody' : mode === 'item' ? 'item-tbody' : ''}">${rows_html}</tbody>
       </table>
     </div>`;
 }

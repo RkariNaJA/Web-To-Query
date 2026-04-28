@@ -26,6 +26,14 @@ async function runQuery() {
       const totalRows = (raw.totalHeaderRows || 0) + (raw.totalLineRows || 0);
       addHistory(po, mode, totalRows);
       renderSearchDBC(raw, po);
+    } else if (mode === 'item') {
+      const inventSizeId  = document.getElementById('item-size-input')?.value.trim()    || '';
+      const inventColorId = document.getElementById('item-color-input')?.value.trim()   || '';
+      const inventStyleId = document.getElementById('item-style-input')?.value.trim()   || '';
+      const dataAreaId    = document.getElementById('item-company-input')?.value.trim() || '';
+      const { rows, raw } = await fetchQuery('item', po, null, { inventSizeId, inventColorId, inventStyleId, dataAreaId });
+      addHistory(po, mode, raw.totalRows ?? rows.length);
+      renderResults(rows, po, null, null, raw);
     } else if (mode === 'comparedbc') {
       const [stagingRes, dbcRes] = await Promise.all([
         fetchQuery('search', po),

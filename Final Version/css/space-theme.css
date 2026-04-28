@@ -410,3 +410,13 @@ html[data-theme="space"] .nav-item.active-comparedbc {
   background: linear-gradient(90deg, rgba(224, 170, 255, 0.11) 0%, transparent 75%);
   box-shadow: inset 2px 0 10px rgba(224, 170, 255, 0.06);
 }
+
+html[data-theme="space"] .nav-item.active-item {
+  background: linear-gradient(90deg, rgba(244, 114, 182, 0.11) 0%, transparent 75%);
+  box-shadow: inset 2px 0 10px rgba(244, 114, 182, 0.06);
+}
+
+html[data-theme="space"] .summary-value.pink {
+  color: #ff6b9d;
+  text-shadow: 0 0 12px rgba(255, 107, 157, 0.5);
+}

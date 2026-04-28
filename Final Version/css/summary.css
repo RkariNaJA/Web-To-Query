@@ -113,6 +113,11 @@
   text-shadow: 0 0 22px rgba(45, 212, 191, 0.35);
 }
 
+.summary-value.pink {
+  color: #f472b6;
+  text-shadow: 0 0 22px rgba(244, 114, 182, 0.35);
+}
+
 .summary-value.small {
   font-size: 13px;
   line-height: 1.5;

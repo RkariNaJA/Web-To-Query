@@ -111,6 +111,13 @@ aside {
   box-shadow: inset 2px 0 10px rgba(232, 121, 249, 0.06);
 }
 
+.nav-item.active-item {
+  border-left-color: #f472b6;
+  background: linear-gradient(90deg, rgba(244, 114, 182, 0.09) 0%, transparent 75%);
+  color: #f472b6;
+  box-shadow: inset 2px 0 10px rgba(244, 114, 182, 0.06);
+}
+
 .nav-icon {
   font-family: var(--mono);
   font-size: 13px;
