@@ -7,14 +7,14 @@ function setMode(m) {
   });
   localStorage.setItem('po_mode', m);
   const isUpdate = m === 'updatestaging';
-  const isItem   = m === 'item';
+  const isItem = m === 'item';
   document.getElementById('exec-input-wrap').style.display = isUpdate ? 'flex' : 'none';
   ['item-size-wrap', 'item-color-wrap', 'item-style-wrap', 'item-company-wrap'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = isItem ? 'flex' : 'none';
   });
   document.getElementById('po-prefix').textContent = isItem ? 'ITEM_ID ›' : 'PO_ID ›';
-  document.getElementById('po-input').placeholder   = isItem ? 'e.g. PSKNI701890' : 'e.g. CDHN26HTI020034';
+  document.getElementById('po-input').placeholder = isItem ? 'e.g. PSKNI701890' : 'e.g. CDHN26HTI020034';
   const labelMap = { updatestaging: 'Purchase Order Number & Execution ID', item: 'Item ID · Size · Color · Style · Company' };
   document.getElementById('query-bar-label').textContent = labelMap[m] || 'Purchase Order Number';
   updateSQLPreview();
@@ -53,6 +53,7 @@ ${kw('ORDER BY')} LINENUMBER ${kw('ASC')};`;
        PURCHPRICE ${kw('AS')} [Unit Price], LINEAMOUNT ${kw('AS')} [Net amount],
        ${fn('SUM')}(PURCHQTY) ${kw('OVER')} () ${kw('AS')} [Total QTY],
        ${fn('SUM')}(LINEAMOUNT) ${kw('OVER')} () ${kw('AS')} [Total Net amount],
+       INVENTSITEID ${kw('AS')} [Site],
        PURCHUNIT, NAME ${kw('AS')} [Item Name]
 ${kw('FROM')} PURCHLINE
 ${kw('WHERE')} PURCHID ${kw('=')} ${vl("'" + po + "'")}
@@ -107,9 +108,9 @@ ${kw('SELECT')} LINENUMBER, CREATEDATETIME, EXPORTDATETIME, STATUS,ITEMID,
 ${kw('FROM')} PO_LINES_DBC
 ${kw('WHERE')} PURCHID ${kw('=')} ${vl("'" + po + "'")};`;
   } else if (mode === 'item') {
-    const size    = document.getElementById('item-size-input')?.value.trim()    || '?';
-    const color   = document.getElementById('item-color-input')?.value.trim()   || '?';
-    const season  = document.getElementById('item-style-input')?.value.trim()   || '?';
+    const size = document.getElementById('item-size-input')?.value.trim() || '?';
+    const color = document.getElementById('item-color-input')?.value.trim() || '?';
+    const season = document.getElementById('item-style-input')?.value.trim() || '?';
     const company = document.getElementById('item-company-input')?.value.trim() || '?';
     el.innerHTML = `${kw('SELECT')} ITEMID, INVENTSIZEID, INVENTCOLORID, INVENTSTYLEID,
        i.DATAAREAID ${kw('AS')} [Company]

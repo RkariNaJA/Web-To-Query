@@ -181,9 +181,9 @@ function applyCountFilter() {
   const fSeason = document.getElementById('filter-season')?.value || '';
 
   let filtered = lastCountRows.filter(r => {
-    if (fColor && getVal(r, 'IVZ_COLOR_CT') !== fColor) return false;
-    if (fSize && getVal(r, 'IVZ_SIZE_CT') !== fSize) return false;
-    if (fSeason && getVal(r, 'IVZ_SEASON_CT') !== fSeason) return false;
+    if (fColor && getVal(r, 'COLOR') !== fColor) return false;
+    if (fSize && getVal(r, 'SIZE') !== fSize) return false;
+    if (fSeason && getVal(r, 'SEASON') !== fSeason) return false;
     return true;
   });
 
@@ -195,16 +195,16 @@ function applyCountFilter() {
     return (parseFloat(getVal(a, 'LINENUMBER')) || 0) - (parseFloat(getVal(b, 'LINENUMBER')) || 0);
   });
 
-  const colKeys = ['LINENUMBER', 'PURCHID', 'ITEMID', 'IVZ_COLOR_CT', 'IVZ_SIZE_CT', 'IVZ_SEASON_CT', 'PURCHQTY', 'PURCHPRICE', 'LINEAMOUNT', 'PURCHUNIT'];
+  const colKeys = ['LINENUMBER', 'PURCHID', 'ITEMID', 'COLOR', 'SIZE', 'SEASON', 'QTY', 'UNIT_PRICE', 'NET_AMOUNT', 'SITE', 'PURCHUNIT'];
 
   tbody.innerHTML = filtered.map(r =>
     '<tr>' + colKeys.map(k => {
       let val = getVal(r, k);
       val = (val !== undefined && val !== null && val !== '') ? val : '—';
       if (val !== '—') {
-        if (k === 'PURCHQTY') val = parseFloat(val || 0).toFixed(0);
-        if (k === 'PURCHPRICE') val = parseFloat(val || 0).toFixed(5);
-        if (k === 'LINEAMOUNT') val = parseFloat(val || 0).toFixed(2);
+        if (k === 'QTY') val = parseFloat(val || 0).toFixed(0);
+        if (k === 'UNIT_PRICE') val = parseFloat(val || 0).toFixed(5);
+        if (k === 'NET_AMOUNT') val = parseFloat(val || 0).toFixed(2);
       }
       if (k === 'LINENUMBER') return `<td class="num">${val}</td>`;
       if (!val || val === '—') return `<td class="td-dim">—</td>`;
@@ -215,8 +215,8 @@ function applyCountFilter() {
   const lineCount = document.getElementById('count-line-count');
   if (lineCount) lineCount.textContent = filtered.length;
 
-  const fQty = filtered.reduce((s, r) => s + (parseFloat(getVal(r, 'PURCHQTY') || getVal(r, 'QTY') || 0) || 0), 0);
-  const fAmt = filtered.reduce((s, r) => s + (parseFloat(getVal(r, 'LINEAMOUNT') || getVal(r, 'Net amount') || 0) || 0), 0);
+  const fQty = filtered.reduce((s, r) => s + (parseFloat(getVal(r, 'QTY')) || 0), 0);
+  const fAmt = filtered.reduce((s, r) => s + (parseFloat(getVal(r, 'NET_AMOUNT')) || 0), 0);
   const cqtyEl = document.getElementById('count-summary-qty');
   if (cqtyEl) cqtyEl.textContent = parseFloat(fQty).toLocaleString();
   const camtEl = document.getElementById('count-summary-amt');

@@ -35,8 +35,8 @@ function renderResults(rows, po, serverTotalQty, serverTotalAmount, raw = {}) {
     cols = ['LINE', 'EXEC ID', 'PO', 'ITEM ID', 'SIZE', 'COLOR', 'SEASON', 'QTY', 'PRICE', 'TRANSFER'];
     colKeys = ['LINENUMBER', 'EXECUTIONID', 'PURCHID', 'ITEMID', 'INVENTSIZEID', 'INVENTCOLORID', 'INVENTSEASONID', 'PURCHQTY', 'PURCHPRICE', 'TRANSFERSTATUS'];
   } else if (mode === 'count') {
-    cols = ['LINE', 'PO', 'ITEM ID', 'COLOR', 'SIZE', 'SEASON', 'QTY', 'UNIT PRICE', 'NET AMOUNT', 'UNIT'];
-    colKeys = ['LINENUMBER', 'PURCHID', 'ITEMID', 'IVZ_COLOR_CT', 'IVZ_SIZE_CT', 'IVZ_SEASON_CT', 'PURCHQTY', 'PURCHPRICE', 'LINEAMOUNT', 'PURCHUNIT'];
+    cols = ['LINE', 'PO', 'ITEM ID', 'COLOR', 'SIZE', 'SEASON', 'QTY', 'UNIT PRICE', 'NET AMOUNT', 'SITE', 'UNIT'];
+    colKeys = ['LINENUMBER', 'PURCHID', 'ITEMID', 'COLOR', 'SIZE', 'SEASON', 'QTY', 'UNIT_PRICE', 'NET_AMOUNT', 'SITE', 'PURCHUNIT'];
   } else if (mode === 'check') {
     cols = ['EXEC ID', 'SITE', 'LINE', 'PO', 'ITEM ID', 'SIZE', 'COLOR', 'SEASON'];
     colKeys = ['EXECUTIONID', 'INVENTSITEID', 'LINENUMBER', 'PURCHID', 'ITEMID', 'INVENTSIZEID', 'INVENTCOLORID', 'INVENTSEASONID'];
@@ -68,9 +68,9 @@ function renderResults(rows, po, serverTotalQty, serverTotalAmount, raw = {}) {
       let val = (origVal !== undefined && origVal !== null && origVal !== '') ? origVal : '—';
 
       if (val !== '—') {
-        if (k === 'PURCHQTY') val = parseFloat(val || 0).toFixed(0);
-        if (k === 'PURCHPRICE' || k === 'Unit Price') val = parseFloat(val || 0).toFixed(5);
-        if (k === 'LINEAMOUNT') val = parseFloat(val || 0).toFixed(2);
+        if (k === 'PURCHQTY' || k === 'QTY') val = parseFloat(val || 0).toFixed(0);
+        if (k === 'PURCHPRICE' || k === 'Unit Price' || k === 'UNIT_PRICE') val = parseFloat(val || 0).toFixed(5);
+        if (k === 'LINEAMOUNT' || k === 'NET_AMOUNT') val = parseFloat(val || 0).toFixed(2);
         if (k === 'Net amount') val = parseFloat(val || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         if (['Quantity', 'Received', 'Deliver Remainder', 'Ordered', 'Invent Unit QTY'].includes(k))
           val = parseFloat(val || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
@@ -172,10 +172,10 @@ function renderResults(rows, po, serverTotalQty, serverTotalAmount, raw = {}) {
       </div>`;
   } else if (mode === 'count') {
     lastCountRows = rows;
-    const row0Qty = rows[0] ? (parseFloat(getVal(rows[0], 'Total QTY')) || 0) : 0;
-    const row0Amt = rows[0] ? (parseFloat(getVal(rows[0], 'Total Net amount')) || 0) : 0;
-    const sumQty = rows.reduce((s, r) => s + (parseFloat(getVal(r, 'QTY') || getVal(r, 'PURCHQTY')) || 0), 0);
-    const sumAmt = rows.reduce((s, r) => s + (parseFloat(getVal(r, 'Net amount') || getVal(r, 'LINEAMOUNT')) || 0), 0);
+    const row0Qty = rows[0] ? (parseFloat(getVal(rows[0], 'TOTAL_QTY')) || 0) : 0;
+    const row0Amt = rows[0] ? (parseFloat(getVal(rows[0], 'TOTAL_NET_AMOUNT')) || 0) : 0;
+    const sumQty = rows.reduce((s, r) => s + (parseFloat(getVal(r, 'QTY')) || 0), 0);
+    const sumAmt = rows.reduce((s, r) => s + (parseFloat(getVal(r, 'NET_AMOUNT')) || 0), 0);
     let totalQty = serverTotalQty ?? (row0Qty !== 0 ? row0Qty : sumQty);
     let totalAmt = serverTotalAmount ?? (row0Amt !== 0 ? row0Amt : sumAmt);
 
@@ -197,9 +197,9 @@ function renderResults(rows, po, serverTotalQty, serverTotalAmount, raw = {}) {
         <div class="summary-card"><div class="summary-label">Total Net Amount</div><div class="summary-value" id="count-summary-amt">${parseFloat(totalAmt).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div></div>
       </div>
       <div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;padding:10px 0 4px;">
-        ${mkSelect('filter-color', 'Color', uniqOpts('IVZ_COLOR_CT'))}
-        ${mkSelect('filter-size', 'Size', uniqOpts('IVZ_SIZE_CT'))}
-        ${mkSelect('filter-season', 'Season', uniqOpts('IVZ_SEASON_CT'))}
+        ${mkSelect('filter-color', 'Color', uniqOpts('COLOR'))}
+        ${mkSelect('filter-size', 'Size', uniqOpts('SIZE'))}
+        ${mkSelect('filter-season', 'Season', uniqOpts('SEASON'))}
         <button onclick="document.getElementById('filter-color').value='';document.getElementById('filter-size').value='';document.getElementById('filter-season').value='';applyCountFilter();"
           style="align-self:flex-end;padding:5px 12px;background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);font-family:var(--mono);font-size:11px;border-radius:6px;cursor:pointer;">✕ Clear</button>
       </div>`;
