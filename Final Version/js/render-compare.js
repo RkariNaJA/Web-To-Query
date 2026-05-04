@@ -25,10 +25,10 @@ function renderCompare(stagingRows, axRows, po) {
   const aLine = r => parseFloat(getVal(r, 'LINENUMBER')) || 0;
   // AX qty: could be 'QTY' alias or 'PURCHQTY'
   const aQty = r => parseFloat(getVal(r, 'QTY') ?? getVal(r, 'PURCHQTY')) || 0;
-  // AX amount: 'Net amount' alias or 'LINEAMOUNT'
-  const aAmt = r => parseFloat(getVal(r, 'Net amount') ?? getVal(r, 'LINEAMOUNT')) || 0;
-  // AX price: 'Unit Price' alias or 'PURCHPRICE'
-  const aPrice = r => parseFloat(getVal(r, 'Unit Price') ?? getVal(r, 'PURCHPRICE')) || 0;
+  // AX amount: n8n key NET_AMOUNT, fallback legacy aliases
+  const aAmt = r => parseFloat(getVal(r, 'NET_AMOUNT') ?? getVal(r, 'Net amount') ?? getVal(r, 'LINEAMOUNT')) || 0;
+  // AX price: n8n key UNIT_PRICE, fallback legacy aliases
+  const aPrice = r => parseFloat(getVal(r, 'UNIT_PRICE') ?? getVal(r, 'Unit Price') ?? getVal(r, 'PURCHPRICE')) || 0;
   const aItem = r => getVal(r, 'ITEMID') ?? '—';
   // AX size: 'Size' alias or 'IVZ_SIZE_CT'
   const aSize = r => getVal(r, 'Size') ?? getVal(r, 'IVZ_SIZE_CT') ?? '—';
@@ -197,7 +197,7 @@ function renderCompare(stagingRows, axRows, po) {
   };
   const uniqAxPrices = () => {
     const vals = new Set();
-    axRows.forEach(r => { const v = parseFloat(getVal(r, 'Unit Price') ?? getVal(r, 'PURCHPRICE')); if (!isNaN(v)) vals.add(v.toFixed(5)); });
+    axRows.forEach(r => { const v = parseFloat(getVal(r, 'UNIT_PRICE') ?? getVal(r, 'Unit Price') ?? getVal(r, 'PURCHPRICE')); if (!isNaN(v)) vals.add(v.toFixed(5)); });
     return [...vals].sort((a, b) => parseFloat(a) - parseFloat(b));
   };
   const mkCompareSelect = (id, label, opts) => `
@@ -267,7 +267,7 @@ function applyCompareFilter() {
   const sTransfer = r => parseInt(getVal(r, 'TRANSFERSTATUS'));
   const aLine = r => parseFloat(getVal(r, 'LINENUMBER')) || 0;
   const aQty = r => parseFloat(getVal(r, 'QTY') ?? getVal(r, 'PURCHQTY')) || 0;
-  const aPrice = r => parseFloat(getVal(r, 'Unit Price') ?? getVal(r, 'PURCHPRICE')) || 0;
+  const aPrice = r => parseFloat(getVal(r, 'UNIT_PRICE') ?? getVal(r, 'Unit Price') ?? getVal(r, 'PURCHPRICE')) || 0;
   const aItem = r => getVal(r, 'ITEMID') ?? '—';
   const aSize = r => getVal(r, 'Size') ?? getVal(r, 'IVZ_SIZE_CT') ?? '—';
   const aColor = r => getVal(r, 'Color') ?? getVal(r, 'IVZ_COLOR_CT') ?? '—';
