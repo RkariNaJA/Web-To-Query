@@ -221,11 +221,12 @@ function renderCompareDBC(stagingRows, dbcLines, po) {
       <button onclick="exportToExcel()" style="margin-left:auto;padding:5px 14px;background:var(--surface2);border:1px solid var(--green);color:var(--green);font-family:var(--mono);font-size:11px;border-radius:6px;cursor:pointer;letter-spacing:0.05em;font-weight:600;transition:all 0.15s;" onmouseover="this.style.background='var(--green-glow)'" onmouseout="this.style.background='var(--surface2)'">&#11015; Export Excel</button>
     </div>
     <div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;padding:10px 28px 4px;">
+      ${mkSel('cdbc-filter-itemid', 'Item ID', uniqOpts('ITEMID', 'ITEMID'))}
       ${mkSel('cdbc-filter-color',  'Color',  uniqOpts('INVENTCOLORID', 'COLORID'))}
       ${mkSel('cdbc-filter-size',   'Size',   uniqOpts('INVENTSIZEID',  'SIZEID'))}
       ${mkSel('cdbc-filter-season', 'Season', uniqOpts('INVENTSTYLEID', 'SEASON'))}
       ${mkSel('cdbc-filter-status', 'Status', ['Match', 'Mismatch', 'DBC Only', 'Stg Only'])}
-      <button onclick="['cdbc-filter-color','cdbc-filter-size','cdbc-filter-season','cdbc-filter-status'].forEach(id=>document.getElementById(id).value='');applyCompareDBC();"
+      <button onclick="['cdbc-filter-itemid','cdbc-filter-color','cdbc-filter-size','cdbc-filter-season','cdbc-filter-status'].forEach(id=>document.getElementById(id).value='');applyCompareDBC();"
         style="align-self:flex-end;padding:5px 12px;background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);font-family:var(--mono);font-size:11px;border-radius:6px;cursor:pointer;">&#10005; Clear</button>
       <span id="comparedbc-line-count" style="align-self:flex-end;font-family:var(--mono);font-size:11px;color:var(--text-dim);">${allLines.length} lines</span>
     </div>
@@ -245,6 +246,7 @@ function applyCompareDBC() {
   if (!tbody) return;
 
   const { stagingRows, dbcLines } = lastCompareDBC;
+  const fItemId = document.getElementById('cdbc-filter-itemid')?.value || '';
   const fColor  = document.getElementById('cdbc-filter-color')?.value  || '';
   const fSize   = document.getElementById('cdbc-filter-size')?.value   || '';
   const fSeason = document.getElementById('cdbc-filter-season')?.value || '';
@@ -278,9 +280,11 @@ function applyCompareDBC() {
 
   allLines = allLines.filter(ln => {
     const s = stagingMap[ln], d = dbcMap[ln];
+    const itemId = s ? (getVal(s, 'ITEMID') ?? '—') : '—';
     const color  = s ? sColor(s)  : (d ? dColor(d)  : '—');
     const size   = s ? sSize(s)   : (d ? dSize(d)   : '—');
     const season = s ? sSeason(s) : (d ? dSeason(d) : '—');
+    if (fItemId && itemId !== fItemId) return false;
     if (fColor  && color  !== fColor)  return false;
     if (fSize   && size   !== fSize)   return false;
     if (fSeason && season !== fSeason) return false;

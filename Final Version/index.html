@@ -5,7 +5,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>PO Database Query</title>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="icon" type="image/svg+xml" href="public/github.svg" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap"
+    rel="stylesheet" />
   <link rel="stylesheet" href="css/variables.css" />
   <link rel="stylesheet" href="css/base.css" />
   <link rel="stylesheet" href="css/header.css" />
@@ -33,14 +36,21 @@
       <div class="header-divider"></div>
       <span class="header-sub">DMFPURCHLINEENTITY / MSSQL</span>
       <div style="margin-left:auto;display:flex;align-items:center;gap:14px;">
-        <button class="space-theme-btn" id="space-theme-btn" onclick="toggleSpaceTheme()" title="Space theme" aria-label="Toggle space theme">✦</button>
-        <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Switch theme" aria-label="Toggle light/dark theme">
+        <button class="space-theme-btn" id="space-theme-btn" onclick="toggleSpaceTheme()" title="Space theme"
+          aria-label="Toggle space theme">✦</button>
+        <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Switch theme"
+          aria-label="Toggle light/dark theme">
           <span class="toggle-icon toggle-moon">☽</span>
           <span class="toggle-knob"></span>
           <span class="toggle-icon toggle-sun">☀</span>
         </button>
-        <button onclick="openConfig()" style="background:var(--surface3);border:1px solid var(--border-accent);color:var(--text-muted);font-family:var(--mono);font-size:10.5px;padding:6px 14px;border-radius:8px;cursor:pointer;letter-spacing:0.09em;transition:all 0.18s;font-weight:600;" onmouseover="this.style.borderColor='var(--border-bright)';this.style.color='var(--text)'" onmouseout="this.style.borderColor='var(--border-accent)';this.style.color='var(--text-muted)'">⚙ CONFIG</button>
-        <div style="display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:10.5px;color:var(--green);letter-spacing:0.1em;font-weight:600;">
+        <button onclick="openConfig()"
+          style="background:var(--surface3);border:1px solid var(--border-accent);color:var(--text-muted);font-family:var(--mono);font-size:10.5px;padding:6px 14px;border-radius:8px;cursor:pointer;letter-spacing:0.09em;transition:all 0.18s;font-weight:600;"
+          onmouseover="this.style.borderColor='var(--border-bright)';this.style.color='var(--text)'"
+          onmouseout="this.style.borderColor='var(--border-accent)';this.style.color='var(--text-muted)'">⚙
+          CONFIG</button>
+        <div
+          style="display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:10.5px;color:var(--green);letter-spacing:0.1em;font-weight:600;">
           <div class="status-dot"></div><span>READY</span>
         </div>
       </div>
@@ -112,33 +122,33 @@
         <div class="query-row">
           <div class="po-input-wrap">
             <span class="po-prefix" id="po-prefix">PO_ID ›</span>
-            <input class="po-input" id="po-input" type="text" placeholder="e.g. CDHN26HTI020034"
-              autocomplete="off" spellcheck="false" onkeydown="if(event.key==='Enter') runQuery()" />
+            <input class="po-input" id="po-input" type="text" placeholder="e.g. CDHN26HTI020034" autocomplete="off"
+              spellcheck="false" onkeydown="if(event.key==='Enter') runQuery()" />
           </div>
           <div class="po-input-wrap" id="exec-input-wrap" style="display:none;">
             <span class="po-prefix">EXEC_ID ›</span>
-            <input class="po-input" id="exec-input" type="text" placeholder="e.g. BotPO_20240101_001"
-              autocomplete="off" spellcheck="false" onkeydown="if(event.key==='Enter') runQuery()" />
+            <input class="po-input" id="exec-input" type="text" placeholder="e.g. BotPO_20240101_001" autocomplete="off"
+              spellcheck="false" onkeydown="if(event.key==='Enter') runQuery()" />
           </div>
           <div class="po-input-wrap" id="item-size-wrap" style="display:none;flex:0 1 150px;max-width:150px;">
             <span class="po-prefix">SIZE ›</span>
-            <input class="po-input" id="item-size-input" type="text" placeholder="e.g. M"
-              autocomplete="off" spellcheck="false" onkeydown="if(event.key==='Enter') runQuery()" />
+            <input class="po-input" id="item-size-input" type="text" placeholder="e.g. M" autocomplete="off"
+              spellcheck="false" onkeydown="if(event.key==='Enter') runQuery()" />
           </div>
           <div class="po-input-wrap" id="item-color-wrap" style="display:none;flex:0 1 150px;max-width:150px;">
             <span class="po-prefix">COLOR ›</span>
-            <input class="po-input" id="item-color-input" type="text" placeholder="e.g. 616"
-              autocomplete="off" spellcheck="false" onkeydown="if(event.key==='Enter') runQuery()" />
+            <input class="po-input" id="item-color-input" type="text" placeholder="e.g. 616" autocomplete="off"
+              spellcheck="false" onkeydown="if(event.key==='Enter') runQuery()" />
           </div>
           <div class="po-input-wrap" id="item-style-wrap" style="display:none;flex:0 1 150px;max-width:150px;">
             <span class="po-prefix">SEASON ›</span>
-            <input class="po-input" id="item-style-input" type="text" placeholder="e.g. FA26"
-              autocomplete="off" spellcheck="false" onkeydown="if(event.key==='Enter') runQuery()" />
+            <input class="po-input" id="item-style-input" type="text" placeholder="e.g. FA26" autocomplete="off"
+              spellcheck="false" onkeydown="if(event.key==='Enter') runQuery()" />
           </div>
           <div class="po-input-wrap" id="item-company-wrap" style="display:none;flex:0 1 140px;max-width:140px;">
             <span class="po-prefix">COMPANY ›</span>
-            <input class="po-input" id="item-company-input" type="text" placeholder="e.g. HT"
-              autocomplete="off" spellcheck="false" onkeydown="if(event.key==='Enter') runQuery()" />
+            <input class="po-input" id="item-company-input" type="text" placeholder="e.g. HT" autocomplete="off"
+              spellcheck="false" onkeydown="if(event.key==='Enter') runQuery()" />
           </div>
           <button class="run-btn" id="run-btn" onclick="runQuery()">▶ RUN</button>
         </div>
@@ -147,9 +157,12 @@
       <div style="padding: 10px 28px 0;">
         <div class="sql-preview">
           <div class="sql-preview-header">
-            <span style="width:8px;height:8px;border-radius:50%;background:var(--border-accent);display:inline-block;"></span>
-            <span style="width:8px;height:8px;border-radius:50%;background:var(--border-accent);display:inline-block;margin-left:4px;"></span>
-            <span style="width:8px;height:8px;border-radius:50%;background:var(--border-accent);display:inline-block;margin-left:4px;"></span>
+            <span
+              style="width:8px;height:8px;border-radius:50%;background:var(--border-accent);display:inline-block;"></span>
+            <span
+              style="width:8px;height:8px;border-radius:50%;background:var(--border-accent);display:inline-block;margin-left:4px;"></span>
+            <span
+              style="width:8px;height:8px;border-radius:50%;background:var(--border-accent);display:inline-block;margin-left:4px;"></span>
             <span class="sql-preview-title">SQL PREVIEW</span>
           </div>
           <div class="sql-preview-body" id="sql-preview"></div>
@@ -182,9 +195,12 @@
         <input class="field-input" id="cfg-auth" type="text" placeholder="Bearer eyJ..." />
       </div>
       <div class="config-note">
-        Sends <code>POST</code> → <code>{ "queryType": "search|searchdbc|list|count|update|packroll|compare|comparedbc|check|updatestaging", "searchKeyword": "PO" }</code><br><br>
-        <b>search</b> = Staging PO &nbsp;|&nbsp; <b>searchdbc</b> = DBC PO &nbsp;|&nbsp; <b>list</b> = Error PO &nbsp;|&nbsp; <b>count</b> = PO Line AX<br>
-        <b>update</b> = Pack/Roll &nbsp;|&nbsp; <b>packroll</b> = QTY Pack/Roll &nbsp;|&nbsp; <b>compare</b> = Stg vs AX &nbsp;|&nbsp; <b>comparedbc</b> = Stg vs DBC (both parallel)<br>
+        Sends <code>POST</code> →
+        <code>{ "queryType": "search|searchdbc|list|count|update|packroll|compare|comparedbc|check|updatestaging", "searchKeyword": "PO" }</code><br><br>
+        <b>search</b> = Staging PO &nbsp;|&nbsp; <b>searchdbc</b> = DBC PO &nbsp;|&nbsp; <b>list</b> = Error PO
+        &nbsp;|&nbsp; <b>count</b> = PO Line AX<br>
+        <b>update</b> = Pack/Roll &nbsp;|&nbsp; <b>packroll</b> = QTY Pack/Roll &nbsp;|&nbsp; <b>compare</b> = Stg vs AX
+        &nbsp;|&nbsp; <b>comparedbc</b> = Stg vs DBC (both parallel)<br>
         <b>check</b> = BotPO Checking &nbsp;|&nbsp; <b>updatestaging</b> = Update Staging Status
       </div>
       <button class="save-btn" onclick="saveConfig()">Save & Close</button>
@@ -206,4 +222,5 @@
   <script src="js/reports.js"></script>
   <script src="js/init.js"></script>
 </body>
+
 </html>

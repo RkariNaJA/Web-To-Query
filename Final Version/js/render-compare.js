@@ -223,12 +223,13 @@ function renderCompare(stagingRows, axRows, po) {
       <button onclick="exportToExcel()" style="margin-left:auto;padding:5px 14px;background:var(--surface2);border:1px solid var(--green);color:var(--green);font-family:var(--mono);font-size:11px;border-radius:6px;cursor:pointer;letter-spacing:0.05em;font-weight:600;transition:all 0.15s;" onmouseover="this.style.background='var(--green-glow)'" onmouseout="this.style.background='var(--surface2)'">⬇ Export Excel</button>
     </div>
     <div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;padding:10px 28px 4px;">
+      ${mkCompareSelect('compare-filter-itemid', 'Item ID', uniqCompareOpts('ITEMID', 'ITEMID', null))}
       ${mkCompareSelect('compare-filter-color', 'Color', uniqCompareOpts('INVENTCOLORID', 'Color', 'IVZ_COLOR_CT'))}
       ${mkCompareSelect('compare-filter-size', 'Size', uniqCompareOpts('INVENTSIZEID', 'Size', 'IVZ_SIZE_CT'))}
       ${mkCompareSelect('compare-filter-season', 'Season', uniqCompareOpts('INVENTSTYLEID', 'Season', 'IVZ_SEASON_CT'))}
       ${mkCompareSelect('compare-filter-axprice', 'AX Price', uniqAxPrices())}
       ${mkCompareSelect('compare-filter-status', 'Status', ['Match', 'Mismatch', 'AX Only', 'Staging Only'])}
-      <button onclick="['compare-filter-color','compare-filter-size','compare-filter-season','compare-filter-axprice','compare-filter-status'].forEach(id=>document.getElementById(id).value='');applyCompareFilter();"
+      <button onclick="['compare-filter-itemid','compare-filter-color','compare-filter-size','compare-filter-season','compare-filter-axprice','compare-filter-status'].forEach(id=>document.getElementById(id).value='');applyCompareFilter();"
         style="align-self:flex-end;padding:5px 12px;background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);font-family:var(--mono);font-size:11px;border-radius:6px;cursor:pointer;">✕ Clear</button>
       <span id="compare-line-count" style="align-self:flex-end;font-family:var(--mono);font-size:11px;color:var(--text-dim);">${allLines.length} lines</span>
     </div>
@@ -252,6 +253,7 @@ function applyCompareFilter() {
   if (!tbody || !lastCompareData.stagingRows.length && !lastCompareData.axRows.length) return;
 
   const { stagingRows, axRows } = lastCompareData;
+  const fItemId = document.getElementById('compare-filter-itemid')?.value || '';
   const fColor = document.getElementById('compare-filter-color')?.value || '';
   const fSize = document.getElementById('compare-filter-size')?.value || '';
   const fSeason = document.getElementById('compare-filter-season')?.value || '';
@@ -286,9 +288,11 @@ function applyCompareFilter() {
   allLines = allLines.filter(ln => {
     const s = stagingMap[ln];
     const a = axMap[ln];
+    const itemId = s ? sItem(s) : (a ? aItem(a) : '—');
     const color = s ? sColor(s) : (a ? aColor(a) : '—');
     const size = s ? sSize(s) : (a ? aSize(a) : '—');
     const season = a ? aSeason(a) : (s ? (getVal(s, 'INVENTSTYLEID') ?? '—') : '—');
+    if (fItemId && itemId !== fItemId) return false;
     if (fColor && color !== fColor) return false;
     if (fSize && size !== fSize) return false;
     if (fSeason && season !== fSeason) return false;

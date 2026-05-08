@@ -197,10 +197,11 @@ function renderResults(rows, po, serverTotalQty, serverTotalAmount, raw = {}) {
         <div class="summary-card"><div class="summary-label">Total Net Amount</div><div class="summary-value" id="count-summary-amt">${parseFloat(totalAmt).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div></div>
       </div>
       <div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;padding:10px 0 4px;">
+        ${mkSelect('filter-itemid', 'Item ID', uniqOpts('ITEMID'))}
         ${mkSelect('filter-color', 'Color', uniqOpts('COLOR'))}
         ${mkSelect('filter-size', 'Size', uniqOpts('SIZE'))}
         ${mkSelect('filter-season', 'Season', uniqOpts('SEASON'))}
-        <button onclick="document.getElementById('filter-color').value='';document.getElementById('filter-size').value='';document.getElementById('filter-season').value='';applyCountFilter();"
+        <button onclick="['filter-itemid','filter-color','filter-size','filter-season'].forEach(id=>document.getElementById(id).value='');applyCountFilter();"
           style="align-self:flex-end;padding:5px 12px;background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);font-family:var(--mono);font-size:11px;border-radius:6px;cursor:pointer;">✕ Clear</button>
       </div>`;
   } else if (mode === 'check') {

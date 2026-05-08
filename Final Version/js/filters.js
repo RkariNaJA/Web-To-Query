@@ -176,11 +176,13 @@ function applyCountFilter() {
   const tbody = document.getElementById('count-tbody');
   if (!tbody || !lastCountRows.length) return;
 
+  const fItemId = document.getElementById('filter-itemid')?.value || '';
   const fColor = document.getElementById('filter-color')?.value || '';
   const fSize = document.getElementById('filter-size')?.value || '';
   const fSeason = document.getElementById('filter-season')?.value || '';
 
   let filtered = lastCountRows.filter(r => {
+    if (fItemId && getVal(r, 'ITEMID') !== fItemId) return false;
     if (fColor && getVal(r, 'COLOR') !== fColor) return false;
     if (fSize && getVal(r, 'SIZE') !== fSize) return false;
     if (fSeason && getVal(r, 'SEASON') !== fSeason) return false;

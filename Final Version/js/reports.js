@@ -276,6 +276,23 @@ function showErrorSummary() {
       </div>
       <button onclick="window.print()" style="margin-left:auto;padding:8px 16px;background:#1a1e28;border:1px solid #3a4258;color:#6b7494;font-family:'IBM Plex Mono',monospace;font-size:11px;border-radius:6px;cursor:pointer;">⎙ Print</button>
     </div>
+    <div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;padding:16px 0 20px;">
+      <div><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6b7494;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px;">PO</div>
+        <input id="f-po" oninput="applyFilter()" placeholder="Type to filter..." style="background:#1a1e28;border:1px solid #3a4258;color:#e2e6f0;font-family:'IBM Plex Mono',monospace;font-size:11px;padding:5px 8px;border-radius:6px;min-width:160px;" autocomplete="off" spellcheck="false"/></div>
+      <div><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6b7494;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px;">Line No</div>
+        <input id="f-line" oninput="applyFilter()" placeholder="e.g. 1" style="background:#1a1e28;border:1px solid #3a4258;color:#e2e6f0;font-family:'IBM Plex Mono',monospace;font-size:11px;padding:5px 8px;border-radius:6px;min-width:80px;" autocomplete="off" spellcheck="false"/></div>
+      <div><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6b7494;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px;">Item</div>
+        <input id="f-item" oninput="applyFilter()" placeholder="Type to filter..." style="background:#1a1e28;border:1px solid #3a4258;color:#e2e6f0;font-family:'IBM Plex Mono',monospace;font-size:11px;padding:5px 8px;border-radius:6px;min-width:140px;" autocomplete="off" spellcheck="false"/></div>
+      <div><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6b7494;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px;">Size</div>
+        <select id="f-size" onchange="applyFilter()" style="background:#1a1e28;border:1px solid #3a4258;color:#e2e6f0;font-family:'IBM Plex Mono',monospace;font-size:11px;padding:5px 8px;border-radius:6px;min-width:110px;"><option value="">All</option>${[...new Set(lastListRows.map(r=>getVal(r,'INVENTSIZEID')).filter(v=>v&&v!=='—'))].sort().map(v=>`<option value="${v}">${v}</option>`).join('')}</select></div>
+      <div><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6b7494;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px;">Color</div>
+        <select id="f-color" onchange="applyFilter()" style="background:#1a1e28;border:1px solid #3a4258;color:#e2e6f0;font-family:'IBM Plex Mono',monospace;font-size:11px;padding:5px 8px;border-radius:6px;min-width:110px;"><option value="">All</option>${[...new Set(lastListRows.map(r=>getVal(r,'INVENTCOLORID')).filter(v=>v&&v!=='—'))].sort().map(v=>`<option value="${v}">${v}</option>`).join('')}</select></div>
+      <div><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6b7494;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px;">Season</div>
+        <select id="f-season" onchange="applyFilter()" style="background:#1a1e28;border:1px solid #3a4258;color:#e2e6f0;font-family:'IBM Plex Mono',monospace;font-size:11px;padding:5px 8px;border-radius:6px;min-width:110px;"><option value="">All</option>${[...new Set(lastListRows.map(r=>getVal(r,'INVENTSEASONID')).filter(v=>v&&v!=='—'))].sort().map(v=>`<option value="${v}">${v}</option>`).join('')}</select></div>
+      <button onclick="['f-po','f-line','f-item','f-size','f-color','f-season'].forEach(id=>document.getElementById(id).value='');applyFilter();"
+        style="align-self:flex-end;padding:5px 12px;background:#13161d;border:1px solid #3a4258;color:#6b7494;font-family:'IBM Plex Mono',monospace;font-size:11px;border-radius:6px;cursor:pointer;">✕ Clear</button>
+      <span id="row-count" style="align-self:flex-end;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6b7494;margin-left:auto;">${lastListRows.length} rows</span>
+    </div>
     <div style="overflow-x:auto;border:1px solid #252a38;border-radius:8px;">
       <table style="width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:12px;">
         <thead>
@@ -283,11 +300,83 @@ function showErrorSummary() {
             ${th('ITEM ID')}${th('ERROR LINES')}${th('LINE NO.')}${th('SIZES')}${th('COLORS')}${th('SEASONS')}${th('STATUS')}
           </tr>
         </thead>
-        <tbody>${tbodyRows}</tbody>
+        <tbody id="error-sum-tbody"></tbody>
       </table>
     </div>
   </div>
   <script>
+    const ALL_ROWS = ${JSON.stringify(lastListRows)};
+
+    function gv(r,key){var k=key.toLowerCase();for(var j in r)if(j.toLowerCase()===k)return r[j];return undefined;}
+    function uFrom(rows,key){return[...new Set(rows.map(function(r){return gv(r,key);}).filter(function(v){return v&&v!=='—';}))].join(', ')||'—';}
+
+    function buildTable(rows){
+      var poGroups={};
+      rows.forEach(function(r){var poid=gv(r,'PURCHID')||'(unknown)';if(!poGroups[poid])poGroups[poid]=[];poGroups[poid].push(r);});
+      var html=Object.entries(poGroups).sort(function(a,b){
+        var ea=[...new Set(a[1].map(function(r){return gv(r,'EXECUTIONID');}).filter(Boolean))].join(', ');
+        var eb=[...new Set(b[1].map(function(r){return gv(r,'EXECUTIONID');}).filter(Boolean))].join(', ');
+        return ea.localeCompare(eb);
+      }).map(function(e){
+        var poid=e[0],prows=e[1];
+        var itemGroups={};
+        prows.forEach(function(r){var item=gv(r,'ITEMID')||'(unknown)';if(!itemGroups[item])itemGroups[item]=[];itemGroups[item].push(r);});
+        var dupItems=Object.values(itemGroups).filter(function(a){return a.length>1;}).length;
+        var execId=[...new Set(prows.map(function(r){return gv(r,'EXECUTIONID');}).filter(function(v){return v&&v!=='—';}))].join(', ')||'—';
+        var groupRow='<tr><td colspan="7" style="padding:10px 14px;background:#13161d;border-top:2px solid #3a4258;border-bottom:1px solid #252a38;">'+
+          '<span style="font-family:IBM Plex Mono,monospace;font-size:12px;font-weight:600;color:#4f9cf9;">'+poid+'</span>'+
+          '<span style="margin-left:8px;font-family:IBM Plex Mono,monospace;font-size:11px;color:#6b7494;">\xB7</span>'+
+          '<span style="margin-left:8px;font-family:IBM Plex Mono,monospace;font-size:11px;color:#e2e6f0;">'+execId+'</span>'+
+          '<span style="margin-left:10px;font-family:IBM Plex Mono,monospace;font-size:10px;padding:2px 7px;border-radius:3px;background:rgba(255,102,102,0.12);color:#f66;border:1px solid rgba(255,102,102,0.3);">'+prows.length+' ERROR LINE'+(prows.length!==1?'S':'')+'</span>'+
+          '<span style="margin-left:6px;font-family:IBM Plex Mono,monospace;font-size:10px;padding:2px 7px;border-radius:3px;background:rgba(79,156,249,0.1);color:#4f9cf9;border:1px solid rgba(79,156,249,0.25);">'+Object.keys(itemGroups).length+' ITEM'+(Object.keys(itemGroups).length!==1?'S':'')+'</span>'+
+          (dupItems>0?'<span style="margin-left:6px;font-family:IBM Plex Mono,monospace;font-size:10px;padding:2px 7px;border-radius:3px;background:rgba(251,146,60,0.15);color:#fb923c;border:1px solid rgba(251,146,60,0.35);">'+dupItems+' DUPLICATE'+(dupItems!==1?'S':'')+'</span>':'')+
+        '</td></tr>';
+        var itemRows=Object.entries(itemGroups).map(function(ie){
+          var item=ie[0],irows=ie[1];
+          var lineNums=irows.map(function(r){var v=gv(r,'LINENUMBER');return v!=null?v:'—';}).join(', ');
+          var sizes=uFrom(irows,'INVENTSIZEID');
+          var colors=uFrom(irows,'INVENTCOLORID');
+          var seasons=uFrom(irows,'INVENTSEASONID');
+          var isDup=irows.length>1;
+          var badge=isDup
+            ?'<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:4px;font-size:10px;font-weight:700;background:rgba(251,146,60,0.15);color:#fb923c;border:1px solid rgba(251,146,60,0.35);white-space:nowrap;">⧉ DUPLICATE \xD7'+irows.length+'</span>'
+            :'<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:4px;font-size:10px;font-weight:700;background:rgba(255,102,102,0.12);color:#f66;border:1px solid rgba(255,102,102,0.3);white-space:nowrap;">✕ ERROR</span>';
+          var rowBg=isDup?'background:rgba(251,146,60,0.04);':'';
+          return '<tr style="'+rowBg+'">'+
+            '<td style="color:#4f9cf9;font-weight:600;padding-left:28px;">'+item+'</td>'+
+            '<td style="color:#f0c060;text-align:center;">'+irows.length+'</td>'+
+            '<td style="color:#6b7494;font-size:11px;">'+lineNums+'</td>'+
+            '<td style="color:#f0c060;">'+sizes+'</td>'+
+            '<td style="color:#a78bfa;">'+colors+'</td>'+
+            '<td style="color:#2dd4bf;">'+seasons+'</td>'+
+            '<td>'+badge+'</td>'+
+          '</tr>';
+        }).join('');
+        return groupRow+itemRows;
+      }).join('');
+      document.getElementById('error-sum-tbody').innerHTML=html||'<tr><td colspan="7" style="padding:20px;text-align:center;color:#6b7494;">No results match.</td></tr>';
+      document.getElementById('row-count').textContent=rows.length+' rows';
+    }
+
+    function applyFilter(){
+      var fPO=document.getElementById('f-po').value.trim().toLowerCase();
+      var fLine=document.getElementById('f-line').value.trim();
+      var fItem=document.getElementById('f-item').value.trim().toLowerCase();
+      var fSize=document.getElementById('f-size').value;
+      var fColor=document.getElementById('f-color').value;
+      var fSeason=document.getElementById('f-season').value;
+      buildTable(ALL_ROWS.filter(function(r){
+        if(fPO&&!(gv(r,'PURCHID')||'').toLowerCase().includes(fPO))return false;
+        if(fLine&&String(gv(r,'LINENUMBER')||'')!==fLine)return false;
+        if(fItem&&!(gv(r,'ITEMID')||'').toLowerCase().includes(fItem))return false;
+        if(fSize&&gv(r,'INVENTSIZEID')!==fSize)return false;
+        if(fColor&&gv(r,'INVENTCOLORID')!==fColor)return false;
+        if(fSeason&&gv(r,'INVENTSEASONID')!==fSeason)return false;
+        return true;
+      }));
+    }
+
+    buildTable(ALL_ROWS);
     (function(){
       const t=document.documentElement.getAttribute('data-theme');
       if(t==='light'){const m={'#0d0f14':'#eef1f9','#13161d':'#eaedf8','#1a1e28':'#f0f2f8','#252a38':'#c6cde2','#3a4258':'#a4adc8','#e2e6f0':'#1e2d4a','#6b7494':'#546080'};document.querySelectorAll('[style]').forEach(el=>{let s=el.getAttribute('style'),c=false;for(const[d,l] of Object.entries(m)){if(s.includes(d)){s=s.split(d).join(l);c=true;}}if(c)el.setAttribute('style',s);});}
@@ -345,6 +434,9 @@ function showCheckSummary() {
   const totalPOs = Object.keys(poSummaryMap).length;
   const allPOsStr = Object.keys(poSummaryMap).sort().join(',');
 
+  const poSummaryData = Object.entries(poSummaryMap).sort(([a],[b])=>a.localeCompare(b)).map(([po,{execs,items}])=>({po,execs:[...execs].sort(),items:Object.entries(items).sort(([a],[b])=>a.localeCompare(b)).map(([item,{count,sizes,colors,seasons}])=>({item,count,sizes:[...sizes].sort(),colors:[...colors].sort(),seasons:[...seasons].sort()}))}));
+  const itemSummaryData = Object.entries(itemSummaryMap).sort(([a],[b])=>a.localeCompare(b)).map(([item,{sizes,colors,seasons}])=>({item,sizes:[...sizes].sort(),colors:[...colors].sort(),seasons:[...seasons].sort()}));
+
   const poSummaryBar = `
     <div style="border:1px solid #252a38;border-radius:8px;margin-bottom:20px;overflow:hidden;">
       <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#13161d;border-bottom:1px solid #252a38;cursor:pointer;user-select:none;" onclick="const b=document.getElementById('po-sum-body');const ic=document.getElementById('po-sum-ic');b.style.display=b.style.display==='none'?'block':'none';ic.textContent=b.style.display==='none'?'▶':'▼';">
@@ -354,30 +446,12 @@ function showCheckSummary() {
       <div style="padding:8px 14px;background:#0d0f14;border-bottom:1px solid #252a38;word-break:break-all;">
         <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#f87171;letter-spacing:0.03em;">PO: ${allPOsStr}</span>
       </div>
-      <div id="po-sum-body" style="max-height:320px;overflow-y:auto;background:#0d0f14;">
-        ${Object.entries(poSummaryMap).sort(([a], [b]) => a.localeCompare(b)).map(([po, { execs, items }]) => {
-    const totalLines = Object.values(items).reduce((s, i) => s + i.count, 0);
-    const itemCount = Object.keys(items).length;
-    const execStr = execs.size ? [...execs].sort().join(', ') : '—';
-    const itemRows = Object.entries(items).sort(([a], [b]) => a.localeCompare(b)).map(([item, { count, sizes, colors, seasons }]) => `
-            <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;padding:6px 14px 6px 20px;border-bottom:1px solid #13161d;border-right:1px solid #1a1e28;">
-              <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:#4f9cf9;width:100%;margin-bottom:1px;">${item}${count > 1 ? ` <span style="font-size:10px;padding:1px 5px;border-radius:3px;background:rgba(251,146,60,0.12);color:#fb923c;border:1px solid rgba(251,146,60,0.3);">×${count}</span>` : ''}</span>
-              <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6b7494;">Size</span><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#f0c060;margin-left:4px;">${joinOrDash(sizes)}</span>
-              <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6b7494;margin-left:10px;">Color</span><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#a78bfa;margin-left:4px;">${joinOrDash(colors)}</span>
-              <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6b7494;margin-left:10px;">Season</span><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#3ecf8e;margin-left:4px;">${joinOrDash(seasons)}</span>
-            </div>`).join('');
-    return `
-          <div style="border-bottom:1px solid #1a1e28;">
-            <div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:8px 14px;background:#13161d;">
-              <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:#4f9cf9;">${po}</span>
-              <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6b7494;">·  ${execStr}</span>
-              <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;padding:1px 6px;border-radius:3px;background:rgba(62,207,142,0.1);color:#3ecf8e;border:1px solid rgba(62,207,142,0.3);">${totalLines} LINE${totalLines !== 1 ? 'S' : ''}</span>
-              <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;padding:1px 6px;border-radius:3px;background:rgba(79,156,249,0.1);color:#4f9cf9;border:1px solid rgba(79,156,249,0.25);">${itemCount} ITEM${itemCount !== 1 ? 'S' : ''}</span>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;">${itemRows}</div>
-          </div>`;
-  }).join('')}
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 14px;background:#13161d;border-bottom:1px solid #252a38;" onclick="event.stopPropagation()">
+        <span style="${lblStyle}">Filter PO</span>
+        <input id="f-po-sum" oninput="renderPoSummary(this.value)" placeholder="Type PO to filter..." style="${selStyle}flex:1 1 160px;" autocomplete="off" spellcheck="false"/>
+        <button onclick="document.getElementById('f-po-sum').value='';renderPoSummary('');" style="padding:5px 10px;background:#0d0f14;border:1px solid #3a4258;color:#6b7494;font-family:'IBM Plex Mono',monospace;font-size:11px;border-radius:6px;cursor:pointer;">✕</button>
       </div>
+      <div id="po-sum-body" style="max-height:320px;overflow-y:auto;background:#0d0f14;"></div>
     </div>`;
 
   const itemSummaryBar = `
@@ -386,17 +460,12 @@ function showCheckSummary() {
         <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:#3ecf8e;letter-spacing:0.06em;">ITEM SUMMARY &nbsp;<span style="color:#6b7494;font-weight:400;">${Object.keys(itemSummaryMap).length} item${Object.keys(itemSummaryMap).length !== 1 ? 's' : ''}</span></span>
         <span id="item-sum-ic" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6b7494;">▼</span>
       </div>
-      <div id="item-sum-body" style="max-height:220px;overflow-y:auto;">
-        <div style="display:grid;grid-template-columns:1fr 1fr;background:#0d0f14;">
-          ${Object.entries(itemSummaryMap).sort(([a], [b]) => a.localeCompare(b)).map(([item, { sizes, colors, seasons }]) => `
-            <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;padding:7px 14px;border-bottom:1px solid #1a1e28;border-right:1px solid #1a1e28;">
-              <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:#4f9cf9;width:100%;margin-bottom:2px;">${item}</span>
-              <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6b7494;">Size</span><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#f0c060;margin-left:4px;">${joinOrDash(sizes)}</span>
-              <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6b7494;margin-left:10px;">Color</span><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#a78bfa;margin-left:4px;">${joinOrDash(colors)}</span>
-              <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6b7494;margin-left:10px;">Season</span><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#3ecf8e;margin-left:4px;">${joinOrDash(seasons)}</span>
-            </div>`).join('')}
-        </div>
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 14px;background:#13161d;border-bottom:1px solid #252a38;" onclick="event.stopPropagation()">
+        <span style="${lblStyle}">Filter Item</span>
+        <input id="f-item-sum" oninput="renderItemSummary(this.value)" placeholder="Type item to filter..." style="${selStyle}flex:1 1 160px;" autocomplete="off" spellcheck="false"/>
+        <button onclick="document.getElementById('f-item-sum').value='';renderItemSummary('');" style="padding:5px 10px;background:#0d0f14;border:1px solid #3a4258;color:#6b7494;font-family:'IBM Plex Mono',monospace;font-size:11px;border-radius:6px;cursor:pointer;">✕</button>
       </div>
+      <div id="item-sum-body" style="max-height:220px;overflow-y:auto;background:#0d0f14;"></div>
     </div>`;
 
   const filterBar = `
@@ -484,6 +553,53 @@ function showCheckSummary() {
   </div>
   <script>
     const ALL_ROWS = ${JSON.stringify(lastCheckRows)};
+    const PO_DATA = ${JSON.stringify(poSummaryData)};
+    const ITEM_DATA = ${JSON.stringify(itemSummaryData)};
+
+    function jod(arr){return arr&&arr.length?arr.join(', '):'-';}
+
+    function renderPoSummary(filter){
+      var q=(filter||'').toLowerCase();
+      var data=PO_DATA.filter(function(d){return !q||d.po.toLowerCase().includes(q);});
+      if(!data.length){document.getElementById('po-sum-body').innerHTML='<div style="padding:16px;text-align:center;font-family:IBM Plex Mono,monospace;font-size:11px;color:#6b7494;">No POs match.</div>';return;}
+      document.getElementById('po-sum-body').innerHTML=data.map(function(d){
+        var totalLines=d.items.reduce(function(s,i){return s+i.count;},0);
+        var execStr=d.execs.length?d.execs.join(', '):'—';
+        var itemRows=d.items.map(function(it){
+          return '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;padding:6px 14px 6px 20px;border-bottom:1px solid #13161d;border-right:1px solid #1a1e28;">'+
+            '<span style="font-family:IBM Plex Mono,monospace;font-size:11px;font-weight:600;color:#4f9cf9;width:100%;margin-bottom:1px;">'+it.item+(it.count>1?' <span style="font-size:10px;padding:1px 5px;border-radius:3px;background:rgba(251,146,60,0.12);color:#fb923c;border:1px solid rgba(251,146,60,0.3);">\xD7'+it.count+'</span>':'')+'</span>'+
+            '<span style="font-size:10px;color:#6b7494;">Size</span><span style="font-size:10px;color:#f0c060;margin-left:4px;">'+jod(it.sizes)+'</span>'+
+            '<span style="font-size:10px;color:#6b7494;margin-left:10px;">Color</span><span style="font-size:10px;color:#a78bfa;margin-left:4px;">'+jod(it.colors)+'</span>'+
+            '<span style="font-size:10px;color:#6b7494;margin-left:10px;">Season</span><span style="font-size:10px;color:#3ecf8e;margin-left:4px;">'+jod(it.seasons)+'</span>'+
+          '</div>';
+        }).join('');
+        return '<div style="border-bottom:1px solid #1a1e28;">'+
+          '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:8px 14px;background:#13161d;">'+
+            '<span style="font-family:IBM Plex Mono,monospace;font-size:12px;font-weight:600;color:#4f9cf9;">'+d.po+'</span>'+
+            '<span style="font-size:10px;color:#6b7494;margin-left:4px;">\xB7  '+execStr+'</span>'+
+            '<span style="font-size:10px;padding:1px 6px;border-radius:3px;background:rgba(62,207,142,0.1);color:#3ecf8e;border:1px solid rgba(62,207,142,0.3);">'+totalLines+' LINE'+(totalLines!==1?'S':'')+'</span>'+
+            '<span style="font-size:10px;padding:1px 6px;border-radius:3px;background:rgba(79,156,249,0.1);color:#4f9cf9;border:1px solid rgba(79,156,249,0.25);">'+d.items.length+' ITEM'+(d.items.length!==1?'S':'')+'</span>'+
+          '</div>'+
+          '<div style="display:grid;grid-template-columns:1fr 1fr;">'+itemRows+'</div>'+
+        '</div>';
+      }).join('');
+    }
+
+    function renderItemSummary(filter){
+      var q=(filter||'').toLowerCase();
+      var data=ITEM_DATA.filter(function(d){return !q||d.item.toLowerCase().includes(q);});
+      if(!data.length){document.getElementById('item-sum-body').innerHTML='<div style="padding:16px;text-align:center;font-family:IBM Plex Mono,monospace;font-size:11px;color:#6b7494;">No items match.</div>';return;}
+      document.getElementById('item-sum-body').innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;background:#0d0f14;">'+
+        data.map(function(d){
+          return '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;padding:7px 14px;border-bottom:1px solid #1a1e28;border-right:1px solid #1a1e28;">'+
+            '<span style="font-family:IBM Plex Mono,monospace;font-size:11px;font-weight:600;color:#4f9cf9;width:100%;margin-bottom:2px;">'+d.item+'</span>'+
+            '<span style="font-size:10px;color:#6b7494;">Size</span><span style="font-size:10px;color:#f0c060;margin-left:4px;">'+jod(d.sizes)+'</span>'+
+            '<span style="font-size:10px;color:#6b7494;margin-left:10px;">Color</span><span style="font-size:10px;color:#a78bfa;margin-left:4px;">'+jod(d.colors)+'</span>'+
+            '<span style="font-size:10px;color:#6b7494;margin-left:10px;">Season</span><span style="font-size:10px;color:#3ecf8e;margin-left:4px;">'+jod(d.seasons)+'</span>'+
+          '</div>';
+        }).join('')+
+      '</div>';
+    }
 
     function gv(r, key) {
       const k = key.toLowerCase();
@@ -556,6 +672,8 @@ function showCheckSummary() {
       ));
     }
 
+    renderPoSummary('');
+    renderItemSummary('');
     buildTable(ALL_ROWS);
     (function(){
       const t=document.documentElement.getAttribute('data-theme');
