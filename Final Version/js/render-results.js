@@ -35,8 +35,8 @@ function renderResults(rows, po, serverTotalQty, serverTotalAmount, raw = {}) {
     cols = ['LINE', 'EXEC ID', 'PO', 'ITEM ID', 'SIZE', 'COLOR', 'SEASON', 'QTY', 'PRICE', 'TRANSFER'];
     colKeys = ['LINENUMBER', 'EXECUTIONID', 'PURCHID', 'ITEMID', 'INVENTSIZEID', 'INVENTCOLORID', 'INVENTSEASONID', 'PURCHQTY', 'PURCHPRICE', 'TRANSFERSTATUS'];
   } else if (mode === 'count') {
-    cols = ['LINE', 'PO', 'ITEM ID', 'COLOR', 'SIZE', 'SEASON', 'QTY', 'UNIT PRICE', 'NET AMOUNT', 'SITE', 'UNIT'];
-    colKeys = ['LINENUMBER', 'PURCHID', 'ITEMID', 'COLOR', 'SIZE', 'SEASON', 'QTY', 'UNIT_PRICE', 'NET_AMOUNT', 'SITE', 'PURCHUNIT'];
+    cols = ['LINE', 'PO', 'ITEM ID', 'JOBNUMBER', 'COLOR', 'SIZE', 'SEASON', 'QTY', 'UNIT PRICE', 'NET AMOUNT', 'SITE', 'UNIT'];
+    colKeys = ['LINENUMBER', 'PURCHID', 'ITEMID', 'INVENTSERIALID', 'COLOR', 'SIZE', 'SEASON', 'QTY', 'UNIT_PRICE', 'NET_AMOUNT', 'SITE', 'PURCHUNIT'];
   } else if (mode === 'check') {
     cols = ['EXEC ID', 'SITE', 'LINE', 'PO', 'ITEM ID', 'SIZE', 'COLOR', 'SEASON'];
     colKeys = ['EXECUTIONID', 'INVENTSITEID', 'LINENUMBER', 'PURCHID', 'ITEMID', 'INVENTSIZEID', 'INVENTCOLORID', 'INVENTSEASONID'];
@@ -198,10 +198,11 @@ function renderResults(rows, po, serverTotalQty, serverTotalAmount, raw = {}) {
       </div>
       <div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;padding:10px 0 4px;">
         ${mkSelect('filter-itemid', 'Item ID', uniqOpts('ITEMID'))}
+        ${mkSelect('filter-jobnumber', 'Job No', uniqOpts('INVENTSERIALID'))}
         ${mkSelect('filter-color', 'Color', uniqOpts('COLOR'))}
         ${mkSelect('filter-size', 'Size', uniqOpts('SIZE'))}
         ${mkSelect('filter-season', 'Season', uniqOpts('SEASON'))}
-        <button onclick="['filter-itemid','filter-color','filter-size','filter-season'].forEach(id=>document.getElementById(id).value='');applyCountFilter();"
+        <button onclick="['filter-itemid','filter-jobnumber','filter-color','filter-size','filter-season'].forEach(id=>document.getElementById(id).value='');applyCountFilter();"
           style="align-self:flex-end;padding:5px 12px;background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);font-family:var(--mono);font-size:11px;border-radius:6px;cursor:pointer;">✕ Clear</button>
       </div>`;
   } else if (mode === 'check') {

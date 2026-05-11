@@ -177,12 +177,14 @@ function applyCountFilter() {
   if (!tbody || !lastCountRows.length) return;
 
   const fItemId = document.getElementById('filter-itemid')?.value || '';
+  const fJobNumber = document.getElementById('filter-jobnumber')?.value || '';
   const fColor = document.getElementById('filter-color')?.value || '';
   const fSize = document.getElementById('filter-size')?.value || '';
   const fSeason = document.getElementById('filter-season')?.value || '';
 
   let filtered = lastCountRows.filter(r => {
     if (fItemId && getVal(r, 'ITEMID') !== fItemId) return false;
+    if (fJobNumber && getVal(r, 'INVENTSERIALID') !== fJobNumber) return false;
     if (fColor && getVal(r, 'COLOR') !== fColor) return false;
     if (fSize && getVal(r, 'SIZE') !== fSize) return false;
     if (fSeason && getVal(r, 'SEASON') !== fSeason) return false;
@@ -197,7 +199,7 @@ function applyCountFilter() {
     return (parseFloat(getVal(a, 'LINENUMBER')) || 0) - (parseFloat(getVal(b, 'LINENUMBER')) || 0);
   });
 
-  const colKeys = ['LINENUMBER', 'PURCHID', 'ITEMID', 'COLOR', 'SIZE', 'SEASON', 'QTY', 'UNIT_PRICE', 'NET_AMOUNT', 'SITE', 'PURCHUNIT'];
+  const colKeys = ['LINENUMBER', 'PURCHID', 'ITEMID', 'INVENTSERIALID', 'COLOR', 'SIZE', 'SEASON', 'QTY', 'UNIT_PRICE', 'NET_AMOUNT', 'SITE', 'PURCHUNIT'];
 
   tbody.innerHTML = filtered.map(r =>
     '<tr>' + colKeys.map(k => {
