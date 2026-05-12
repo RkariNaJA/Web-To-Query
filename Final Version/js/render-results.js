@@ -92,6 +92,7 @@ function renderResults(rows, po, serverTotalQty, serverTotalAmount, raw = {}) {
       }
       if (k === 'LINENUMBER') return `<td class="num">${val}</td>`;
       if (!val || val === '—') return `<td class="td-dim">—</td>`;
+      if (k === 'Received') return `<td style="color:var(--green);font-weight:600;background:rgba(62,207,142,0.07);">${val}</td>`;
       return `<td>${val}</td>`;
     }).join('') + '</tr>';
   }).join('');

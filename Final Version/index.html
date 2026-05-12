@@ -150,7 +150,10 @@
             <input class="po-input" id="item-company-input" type="text" placeholder="e.g. HT" autocomplete="off"
               spellcheck="false" onkeydown="if(event.key==='Enter') runQuery()" />
           </div>
-          <button class="run-btn" id="run-btn" onclick="runQuery()">▶ RUN</button>
+          <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
+            <button class="run-btn" id="run-btn" onclick="runQuery()">▶ RUN</button>
+            <button id="item-clear-btn" onclick="clearItemInputs()" style="display:none;padding:6px 18px;background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);font-family:var(--mono);font-size:12px;font-weight:600;border-radius:8px;cursor:pointer;letter-spacing:0.05em;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-muted)'">✕ CLEAR</button>
+          </div>
         </div>
       </div>
 

@@ -41,6 +41,7 @@ export default function QtyPackRollTab({ rows, po }) {
                   if (k === 'Compare_O_I' || k === 'Compare_Q_R') return <td key={k}><CompareBadge val={raw} /></td>;
                   if (k === 'LINENUMBER') return <td key={k} className="num">{val}</td>;
                   if (!val || val === '—') return <td key={k} className="td-dim">—</td>;
+                  if (k === 'Received') return <td key={k} style={{ color: 'var(--green)', fontWeight: 600, background: 'rgba(62,207,142,0.07)' }}>{val}</td>;
                   return <td key={k}>{val}</td>;
                 })}
               </tr>

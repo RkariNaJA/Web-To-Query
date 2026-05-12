@@ -16,6 +16,7 @@ import BotPOCheckTab from './tabs/BotPOCheckTab';
 import UpdateStagingTab from './tabs/UpdateStagingTab';
 import SearchDBCTab from './tabs/SearchDBCTab';
 import CompareDBCTab from './tabs/CompareDBCTab';
+import CheckItemAXTab from './tabs/CheckItemAXTab';
 
 function getInitialConfig() {
   return {
@@ -28,6 +29,12 @@ export default function App() {
   const [mode, setModeState]        = useState('search');
   const [poInput, setPoInput]       = useState(() => localStorage.getItem('po_last_input') || '');
   const [execInput, setExecInput]   = useState('');
+  const [itemInputs, setItemInputs] = useState({
+    size:    localStorage.getItem('po_item-size-input')    || '',
+    color:   localStorage.getItem('po_item-color-input')   || '',
+    season:  localStorage.getItem('po_item-style-input')   || '',
+    company: localStorage.getItem('po_item-company-input') || '',
+  });
   const [config, setConfig]         = useState(getInitialConfig);
   const [configOpen, setConfigOpen] = useState(false);
   const [loading, setLoading]       = useState(false);
@@ -63,6 +70,19 @@ export default function App() {
     localStorage.setItem('po_last_input', val);
   }
 
+  function handleItemChange(field, val) {
+    const keyMap = { size: 'po_item-size-input', color: 'po_item-color-input', season: 'po_item-style-input', company: 'po_item-company-input' };
+    setItemInputs(prev => ({ ...prev, [field]: val }));
+    localStorage.setItem(keyMap[field], val);
+  }
+
+  function handleClearItem() {
+    setPoInput('');
+    setItemInputs({ size: '', color: '', season: '', company: '' });
+    localStorage.removeItem('po_last_input');
+    ['po_item-size-input','po_item-color-input','po_item-style-input','po_item-company-input'].forEach(k => localStorage.removeItem(k));
+  }
+
   function saveConfig(newCfg) {
     setConfig(newCfg);
     localStorage.setItem('po_webhook', newCfg.webhook);
@@ -79,7 +99,20 @@ export default function App() {
     setUiState({ type: 'loading' });
 
     try {
-      if (mode === 'compare') {
+      if (mode === 'item') {
+        const extraBody = {
+          inventSizeId:  itemInputs.size,
+          inventColorId: itemInputs.color,
+          inventStyleId: itemInputs.season,
+          dataAreaId:    itemInputs.company,
+        };
+        const { rows, raw } = await fetchQuery(config.webhook, config.auth, 'item', poInput.trim(), null, extraBody);
+        const count = raw.totalRows ?? rows.length;
+        addHistory(poInput.trim(), mode, count);
+        updateBadge('item', rows.length);
+        setUiState({ type: 'result', mode: 'item', rows, po: poInput.trim(), raw });
+
+      } else if (mode === 'compare') {
         const [stagingRes, axRes] = await Promise.all([
           fetchQuery(config.webhook, config.auth, 'search', poInput.trim()),
           fetchQuery(config.webhook, config.auth, 'count', poInput.trim()),
@@ -180,6 +213,7 @@ export default function App() {
         update:   `No Pack/Roll records found for PO ${po}.`,
         packroll: `No QTY Pack/Roll lines found for PO ${po}.`,
         check:    `No BotPO data found for PO ${po}.`,
+        item:     `No variants found for Item ID ${po}.`,
       };
 
       if (!rows || rows.length === 0) {
@@ -197,6 +231,7 @@ export default function App() {
       if (rMode === 'update')   return <PackRollTab rows={rows} po={po} />;
       if (rMode === 'packroll') return <QtyPackRollTab rows={rows} po={po} />;
       if (rMode === 'check')    return <BotPOCheckTab rows={rows} po={po} />;
+      if (rMode === 'item')     return <CheckItemAXTab rows={rows} po={po} />;
     }
     return null;
   }
@@ -210,12 +245,15 @@ export default function App() {
           mode={mode}
           poInput={poInput}
           execInput={execInput}
+          itemInputs={itemInputs}
           onPoChange={handlePoChange}
           onExecChange={setExecInput}
+          onItemChange={handleItemChange}
+          onClearItem={handleClearItem}
           onRun={runQuery}
           loading={loading}
         />
-        <SqlPreview mode={mode} poInput={poInput} execInput={execInput} />
+        <SqlPreview mode={mode} poInput={poInput} execInput={execInput} itemInputs={itemInputs} />
         <div className="results-area">
           {renderResults()}
         </div>

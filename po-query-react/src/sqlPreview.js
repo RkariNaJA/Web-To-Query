@@ -2,7 +2,7 @@ const kw = s => `<span class="sql-kw">${s}</span>`;
 const vl = s => `<span class="sql-val">${s}</span>`;
 const fn = s => `<span class="sql-fn">${s}</span>`;
 
-export function buildSqlPreview(mode, po, execId) {
+export function buildSqlPreview(mode, po, execId, itemInputs = {}) {
   const p = po || '?';
   const e = execId || '?';
 
@@ -103,6 +103,21 @@ ${kw('FROM')} DMFPURCHLINEENTITY ${kw('WHERE')} PURCHID ${kw('=')} ${vl(`'${p}'`
 ${kw('SELECT')} LINENUMBER, PURCHQTY, PURCHPRICE, LINEAMOUNT,
        SIZEID, COLORID, SEASON, STATUS
 ${kw('FROM')} PO_LINES_DBC ${kw('WHERE')} PURCHID ${kw('=')} ${vl(`'${p}'`)};`;
+  }
+  if (mode === 'item') {
+    const sz = itemInputs.size    || '?';
+    const cl = itemInputs.color   || '?';
+    const sn = itemInputs.season  || '?';
+    const co = itemInputs.company || '?';
+    return `${kw('SELECT')} ITEMID, INVENTSIZEID, INVENTCOLORID, INVENTSTYLEID,
+       i.DATAAREAID ${kw('AS')} [Company]
+${kw('FROM')} INVENTDIM d
+${kw('LEFT JOIN')} INVENTDIMCOMBINATION i ${kw('ON')} i.INVENTDIMID ${kw('=')} d.INVENTDIMID
+${kw('WHERE')} i.ITEMID ${kw('=')} ${vl(`'${p}'`)}
+  ${kw('AND')} INVENTSIZEID ${kw('=')} ${vl(`'${sz}'`)}
+  ${kw('AND')} INVENTCOLORID ${kw('=')} ${vl(`'${cl}'`)}
+  ${kw('AND')} INVENTSTYLEID ${kw('=')} ${vl(`'${sn}'`)}
+  ${kw('AND')} i.DATAAREAID ${kw('=')} ${vl(`'${co}'`)};`;
   }
   // compare
   return `<span style="color:var(--accent)">── QUERY 1 (Staging)</span>

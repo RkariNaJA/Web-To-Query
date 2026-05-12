@@ -1,7 +1,7 @@
 import { buildSqlPreview } from '../sqlPreview';
 
-export default function SqlPreview({ mode, poInput, execInput }) {
-  const html = buildSqlPreview(mode, poInput, execInput);
+export default function SqlPreview({ mode, poInput, execInput, itemInputs }) {
+  const html = buildSqlPreview(mode, poInput, execInput, itemInputs);
 
   return (
     <div>

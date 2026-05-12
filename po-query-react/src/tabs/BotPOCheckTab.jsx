@@ -1,10 +1,13 @@
-import { getVal } from '../utils';
+import { getVal, getPopupThemeVars } from '../utils';
 
 function uniqVals(rows, key) {
   return [...new Set(rows.map(r => getVal(r, key)).filter(v => v && v !== '—'))].sort();
 }
 
 function buildCheckSummaryHtml(rows) {
+  const t = getPopupThemeVars();
+  const rootVars = `:root{--bg:${t.bg};--surface:${t.surface};--surface2:${t.surface2};--border:${t.border};--border-accent:${t.borderAccent};--text:${t.text};--text-muted:${t.textMuted};--accent:${t.accent};}`;
+
   const totalExecs = uniqVals(rows, 'EXECUTIONID').length;
   const totalItems = new Set(rows.map(r => getVal(r, 'ITEMID'))).size;
 
@@ -14,39 +17,40 @@ function buildCheckSummaryHtml(rows) {
   const allPOs     = uniqVals(rows, 'PURCHID');
 
   const mkOpts = arr => arr.map(v => `<option value="${v}">${v}</option>`).join('');
-  const selStyle = `background:#1a1e28;border:1px solid #3a4258;color:#e2e6f0;font-family:'IBM Plex Mono',monospace;font-size:11px;padding:5px 8px;border-radius:6px;cursor:pointer;min-width:120px;`;
-  const lblStyle = `font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6b7494;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px;`;
+  const selStyle = `background:var(--surface2);border:1px solid var(--border-accent);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:11px;padding:5px 8px;border-radius:6px;cursor:pointer;min-width:120px;`;
+  const lblStyle = `font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-muted);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px;`;
 
   const filterBar = `<div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;padding:16px 0 20px;">
     <div><div style="${lblStyle}">PO</div><input id="f-po" oninput="applyFilter()" placeholder="Type to filter..." style="${selStyle}min-width:160px;" autocomplete="off"/></div>
     <div><div style="${lblStyle}">Size</div><select id="f-size" onchange="applyFilter()" style="${selStyle}"><option value="">All</option>${mkOpts(allSizes)}</select></div>
     <div><div style="${lblStyle}">Color</div><select id="f-color" onchange="applyFilter()" style="${selStyle}"><option value="">All</option>${mkOpts(allColors)}</select></div>
     <div><div style="${lblStyle}">Season</div><select id="f-season" onchange="applyFilter()" style="${selStyle}"><option value="">All</option>${mkOpts(allSeasons)}</select></div>
-    <button onclick="['f-po','f-size','f-color','f-season'].forEach(id=>document.getElementById(id).value='');applyFilter();" style="align-self:flex-end;padding:5px 12px;background:#13161d;border:1px solid #3a4258;color:#6b7494;font-family:'IBM Plex Mono',monospace;font-size:11px;border-radius:6px;cursor:pointer;">✕ Clear</button>
-    <span id="row-count" style="align-self:flex-end;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6b7494;margin-left:auto;">${rows.length} rows</span>
+    <button onclick="['f-po','f-size','f-color','f-season'].forEach(id=>document.getElementById(id).value='');applyFilter();" style="align-self:flex-end;padding:5px 12px;background:var(--surface);border:1px solid var(--border-accent);color:var(--text-muted);font-family:'IBM Plex Mono',monospace;font-size:11px;border-radius:6px;cursor:pointer;">✕ Clear</button>
+    <span id="row-count" style="align-self:flex-end;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-muted);margin-left:auto;">${rows.length} rows</span>
   </div>`;
 
-  const th = txt => `<th style="padding:10px 14px;text-align:left;font-size:10px;letter-spacing:0.07em;color:#6b7494;text-transform:uppercase;border-bottom:1px solid #252a38;white-space:nowrap;">${txt}</th>`;
+  const th = txt => `<th style="padding:10px 14px;text-align:left;font-size:10px;letter-spacing:0.07em;color:var(--text-muted);text-transform:uppercase;border-bottom:1px solid var(--border);white-space:nowrap;">${txt}</th>`;
 
   return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><title>BotPO Check Summary</title>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
-    <style>*{box-sizing:border-box;margin:0;padding:0;}body{background:#0d0f14;color:#e2e6f0;font-family:'IBM Plex Sans',sans-serif;padding:32px;min-height:100vh;}body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(62,207,142,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(62,207,142,0.02) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}.wrap{position:relative;z-index:1;max-width:1200px;margin:0 auto;}tbody tr{border-bottom:1px solid #252a38;}tbody tr:hover td{background:rgba(255,255,255,0.02);}tbody td{padding:9px 14px;color:#e2e6f0;vertical-align:middle;}::-webkit-scrollbar{width:6px;height:6px;}::-webkit-scrollbar-thumb{background:#3a4258;border-radius:3px;}</style>
+    <style>${rootVars}*{box-sizing:border-box;margin:0;padding:0;}body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;padding:32px;min-height:100vh;}body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(62,207,142,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(62,207,142,0.02) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}.wrap{position:relative;z-index:1;max-width:1200px;margin:0 auto;}tbody tr{border-bottom:1px solid var(--border);}tbody tr:hover td{background:rgba(255,255,255,0.02);}tbody td{padding:9px 14px;color:var(--text);vertical-align:middle;}::-webkit-scrollbar{width:6px;height:6px;}::-webkit-scrollbar-thumb{background:var(--border-accent);border-radius:3px;}</style>
     </head><body><div class="wrap">
-    <div style="display:flex;align-items:center;gap:16px;margin-bottom:4px;padding-bottom:20px;border-bottom:1px solid #252a38;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:4px;padding-bottom:20px;border-bottom:1px solid var(--border);">
       <div style="width:32px;height:32px;background:#3ecf8e;border-radius:8px;display:grid;place-items:center;font-size:16px;flex-shrink:0;color:#0d0f14;">✓</div>
       <div><div style="font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;letter-spacing:0.06em;">BOTPO CHECK SUMMARY</div>
-      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6b7494;margin-top:3px;">${totalExecs} Exec ID${totalExecs!==1?'s':''} · ${totalItems} unique item${totalItems!==1?'s':''}</div></div>
-      <button onclick="window.print()" style="margin-left:auto;padding:8px 16px;background:#1a1e28;border:1px solid #3a4258;color:#6b7494;font-family:'IBM Plex Mono',monospace;font-size:11px;border-radius:6px;cursor:pointer;">⎙ Print</button>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-muted);margin-top:3px;">${totalExecs} Exec ID${totalExecs!==1?'s':''} · ${totalItems} unique item${totalItems!==1?'s':''}</div></div>
+      <button onclick="window.print()" style="margin-left:auto;padding:8px 16px;background:var(--surface2);border:1px solid var(--border-accent);color:var(--text-muted);font-family:'IBM Plex Mono',monospace;font-size:11px;border-radius:6px;cursor:pointer;">⎙ Print</button>
     </div>
     ${filterBar}
-    <div style="overflow-x:auto;border:1px solid #252a38;border-radius:8px;">
+    <div style="overflow-x:auto;border:1px solid var(--border);border-radius:8px;">
       <table style="width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:12px;">
-        <thead><tr style="background:#1a1e28;">${[th('ITEM ID'),th('LINES'),th('LINE NO.'),th('PO'),th('SIZES'),th('COLORS'),th('SEASONS'),th('STATUS')].join('')}</tr></thead>
+        <thead><tr style="background:var(--surface2);">${[th('ITEM ID'),th('LINES'),th('LINE NO.'),th('PO'),th('SIZES'),th('COLORS'),th('SEASONS'),th('STATUS')].join('')}</tr></thead>
         <tbody id="check-tbody"></tbody>
       </table>
     </div></div>
     <script>
       const ALL_ROWS = ${JSON.stringify(rows)};
+      const _T = {surface:'${t.surface}',border:'${t.border}',borderAccent:'${t.borderAccent}',text:'${t.text}',textMuted:'${t.textMuted}',accent:'${t.accent}'};
       function gv(r,key){const k=key.toLowerCase();for(let j in r)if(j.toLowerCase()===k)return r[j];return undefined;}
       function buildTable(rows){
         const execGroups={};
@@ -55,22 +59,22 @@ function buildCheckSummaryHtml(rows) {
           const poGroups={};erows.forEach(r=>{const p=gv(r,'PURCHID')||'(unknown)';if(!poGroups[p])poGroups[p]=[];poGroups[p].push(r);});
           const itemGroups={};erows.forEach(r=>{const it=gv(r,'ITEMID')||'(unknown)';if(!itemGroups[it])itemGroups[it]=[];itemGroups[it].push(r);});
           const dupCount=Object.values(itemGroups).filter(a=>a.length>1).length;
-          const groupRow=\`<tr><td colspan="8" style="padding:10px 14px;background:#13161d;border-top:2px solid #3a4258;border-bottom:1px solid #252a38;">
+          const groupRow=\`<tr><td colspan="8" style="padding:10px 14px;background:\${_T.surface};border-top:2px solid \${_T.borderAccent};border-bottom:1px solid \${_T.border};">
             <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:#3ecf8e;">\${exec}</span>
             <span style="margin-left:10px;font-size:10px;padding:2px 7px;border-radius:3px;background:rgba(62,207,142,0.1);color:#3ecf8e;border:1px solid rgba(62,207,142,0.3);">\${erows.length} LINE\${erows.length!==1?'S':''}</span>
-            <span style="margin-left:6px;font-size:10px;padding:2px 7px;border-radius:3px;background:rgba(79,156,249,0.1);color:#4f9cf9;border:1px solid rgba(79,156,249,0.25);">\${Object.keys(poGroups).length} PO\${Object.keys(poGroups).length!==1?'s':''}</span>
+            <span style="margin-left:6px;font-size:10px;padding:2px 7px;border-radius:3px;background:rgba(79,156,249,0.1);color:\${_T.accent};border:1px solid rgba(79,156,249,0.25);">\${Object.keys(poGroups).length} PO\${Object.keys(poGroups).length!==1?'s':''}</span>
             \${dupCount>0?\`<span style="margin-left:6px;font-size:10px;padding:2px 7px;border-radius:3px;background:rgba(251,146,60,0.15);color:#fb923c;border:1px solid rgba(251,146,60,0.35);">\${dupCount} DUPLICATE\${dupCount!==1?'S':''}</span>\`:''}
           </td></tr>\`;
           const itemRows=Object.entries(itemGroups).flatMap(([item,irows])=>{
             const isDup=irows.length>1;
             const badge=isDup?\`<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:4px;font-size:10px;font-weight:700;background:rgba(251,146,60,0.15);color:#fb923c;border:1px solid rgba(251,146,60,0.35);white-space:nowrap;">⧉ DUPLICATE ×\${irows.length}</span>\`:\`<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:4px;font-size:10px;font-weight:700;background:rgba(239,68,68,0.12);color:#f87171;border:1px solid rgba(239,68,68,0.35);white-space:nowrap;">✕ ERROR</span>\`;
             const rowBg=isDup?'background:rgba(251,146,60,0.04);':'background:rgba(239,68,68,0.03);';
-            const itemColor=isDup?'#9ca3af':'#4f9cf9';
+            const itemColor=isDup?'#9ca3af':_T.accent;
             return irows.map((r,i)=>\`<tr style="\${rowBg}">
               <td style="color:\${itemColor};font-weight:600;padding-left:28px;">\${i===0?item:''}</td>
               <td style="color:#f0c060;text-align:center;">\${i===0?irows.length:''}</td>
-              <td style="color:#6b7494;font-size:11px;">\${gv(r,'LINENUMBER')??'—'}</td>
-              <td style="color:#4f9cf9;font-size:11px;">\${gv(r,'PURCHID')??'—'}</td>
+              <td style="color:\${_T.textMuted};font-size:11px;">\${gv(r,'LINENUMBER')??'—'}</td>
+              <td style="color:\${_T.accent};font-size:11px;">\${gv(r,'PURCHID')??'—'}</td>
               <td style="color:#f0c060;">\${gv(r,'INVENTSIZEID')??'—'}</td>
               <td style="color:#a78bfa;">\${gv(r,'INVENTCOLORID')??'—'}</td>
               <td style="color:#3ecf8e;font-size:11px;">\${gv(r,'INVENTSEASONID')??'—'}</td>
@@ -79,7 +83,7 @@ function buildCheckSummaryHtml(rows) {
           }).join('');
           return groupRow+itemRows;
         }).join('');
-        document.getElementById('check-tbody').innerHTML=html||'<tr><td colspan="8" style="padding:20px;text-align:center;color:#6b7494;">No results match the current filters.</td></tr>';
+        document.getElementById('check-tbody').innerHTML=html||(\`<tr><td colspan="8" style="padding:20px;text-align:center;color:\${_T.textMuted};">No results match the current filters.</td></tr>\`);
         document.getElementById('row-count').textContent=rows.length+' rows';
       }
       function applyFilter(){

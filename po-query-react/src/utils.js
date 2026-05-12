@@ -1,3 +1,10 @@
+export function getPopupThemeVars() {
+  const theme = document.documentElement.getAttribute('data-theme') || 'dark';
+  if (theme === 'light') return { bg:'#f0f2f8', surface:'#ffffff', surface2:'#e8ecf4', border:'#d0d6e8', borderAccent:'#b8c2d8', text:'#1a2038', textMuted:'#5a6478', textDim:'#9aa0b0', accent:'#4f9cf9' };
+  if (theme === 'space') return { bg:'#07051a', surface:'#0e0c28', surface2:'#151232', border:'#2a2660', borderAccent:'#3d3880', text:'#e0d8ff', textMuted:'#6b63a0', textDim:'#3d3866', accent:'#c77dff' };
+  return { bg:'#0d0f14', surface:'#13161d', surface2:'#1a1e28', border:'#252a38', borderAccent:'#3a4258', text:'#e2e6f0', textMuted:'#6b7494', textDim:'#3d4560', accent:'#4f9cf9' };
+}
+
 export function getVal(r, key) {
   if (!r) return undefined;
   const kLow = String(key).toLowerCase();
@@ -13,10 +20,10 @@ export function fmt(v, decimals = 2) {
   return n.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 }
 
-export async function fetchQuery(webhook, auth, queryType, po, execId = null) {
+export async function fetchQuery(webhook, auth, queryType, po, execId = null, extraBody = {}) {
   const headers = { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' };
   if (auth) headers['Authorization'] = auth;
-  const body = { queryType, searchKeyword: po };
+  const body = { queryType, searchKeyword: po, ...extraBody };
   if (execId) body.executionId = execId;
   const res = await fetch(webhook, { method: 'POST', headers, body: JSON.stringify(body) });
   if (!res.ok) {

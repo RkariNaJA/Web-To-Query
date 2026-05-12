@@ -13,6 +13,8 @@ function setMode(m) {
     const el = document.getElementById(id);
     if (el) el.style.display = isItem ? 'flex' : 'none';
   });
+  const clearBtn = document.getElementById('item-clear-btn');
+  if (clearBtn) clearBtn.style.display = isItem ? 'block' : 'none';
   document.getElementById('po-prefix').textContent = isItem ? 'ITEM_ID ›' : 'PO_ID ›';
   document.getElementById('po-input').placeholder = isItem ? 'e.g. PSKNI701890' : 'e.g. CDHN26HTI020034';
   const labelMap = { updatestaging: 'Purchase Order Number & Execution ID', item: 'Item ID · Size · Color · Style · Company' };
@@ -156,3 +158,12 @@ document.getElementById('exec-input').addEventListener('input', () => {
     updateSQLPreview();
   });
 });
+
+function clearItemInputs() {
+  ['po-input', 'item-size-input', 'item-color-input', 'item-style-input', 'item-company-input'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.value = ''; localStorage.removeItem('po_' + id); }
+  });
+  localStorage.removeItem('po_last_input');
+  updateSQLPreview();
+}

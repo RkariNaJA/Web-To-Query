@@ -9,6 +9,7 @@ export const MODES = {
   updatestaging: { label: 'UPDATE STAGING STATUS',   tagClass: 'tag-updatestaging', navClass: 'active-updatestaging' },
   searchdbc:     { label: 'SEARCH PO DBC',           tagClass: 'tag-searchdbc',     navClass: 'active-searchdbc' },
   comparedbc:    { label: 'COMPARE STG vs PO DBC',   tagClass: 'tag-comparedbc',    navClass: 'active-comparedbc' },
+  item:          { label: 'CHECK ITEM ON AX',         tagClass: 'tag-item',          navClass: 'active-item' },
 };
 
 export const NAV_ITEMS = [
@@ -25,6 +26,8 @@ export const NAV_ITEMS = [
   { id: 'searchdbc',     icon: '⊙',  label: 'Search PO DBC' },
   { section: 'BOTPO' },
   { id: 'check',         icon: '✓',  label: 'BotPO Checking' },
+  { section: 'ITEM' },
+  { id: 'item',          icon: '◈',  label: 'Check Item On AX' },
   { section: 'ADMIN' },
   { id: 'updatestaging', icon: '↑',  label: 'Update Staging Status' },
 ];
