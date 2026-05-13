@@ -38,6 +38,7 @@ let lastSearchRows = [];
 let lastPackrollRows = [];
 let lastPackrollQueriedPOs = [];
 let lastItemRows = [];
+let lastUnitRows = [];
 let lastCompareData = { stagingRows: [], axRows: [] };
 let lastSearchDBCData = { header: [], lines: [] };
 let lastCompareDBC = { stagingRows: [], dbcLines: [] };
@@ -57,5 +58,6 @@ const MODES = {
   updatestaging: { label: 'UPDATE STAGING STATUS', tagClass: 'tag-updatestaging', navClass: 'active-updatestaging' },
   searchdbc: { label: 'SEARCH PO DBC', tagClass: 'tag-searchdbc', navClass: 'active-searchdbc' },
   comparedbc: { label: 'COMPARE STG vs PO DBC', tagClass: 'tag-comparedbc', navClass: 'active-comparedbc' },
-  item: { label: 'CHECK ITEM ON AX', tagClass: 'tag-item', navClass: 'active-item' }
+  item: { label: 'CHECK ITEM ON AX', tagClass: 'tag-item', navClass: 'active-item' },
+  unit: { label: 'CHECK UNIT ON AX', tagClass: 'tag-unit', navClass: 'active-unit' }
 };

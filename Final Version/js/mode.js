@@ -8,16 +8,19 @@ function setMode(m) {
   localStorage.setItem('po_mode', m);
   const isUpdate = m === 'updatestaging';
   const isItem = m === 'item';
+  const isUnit = m === 'unit';
   document.getElementById('exec-input-wrap').style.display = isUpdate ? 'flex' : 'none';
-  ['item-size-wrap', 'item-color-wrap', 'item-style-wrap', 'item-company-wrap'].forEach(id => {
+  ['item-size-wrap', 'item-color-wrap', 'item-style-wrap'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = isItem ? 'flex' : 'none';
   });
+  const companyWrap = document.getElementById('item-company-wrap');
+  if (companyWrap) companyWrap.style.display = (isItem || isUnit) ? 'flex' : 'none';
   const clearBtn = document.getElementById('item-clear-btn');
   if (clearBtn) clearBtn.style.display = isItem ? 'block' : 'none';
-  document.getElementById('po-prefix').textContent = isItem ? 'ITEM_ID ›' : 'PO_ID ›';
-  document.getElementById('po-input').placeholder = isItem ? 'e.g. PSKNI701890' : 'e.g. CDHN26HTI020034';
-  const labelMap = { updatestaging: 'Purchase Order Number & Execution ID', item: 'Item ID · Size · Color · Style · Company' };
+  document.getElementById('po-prefix').textContent = (isItem || isUnit) ? 'ITEM_ID ›' : 'PO_ID ›';
+  document.getElementById('po-input').placeholder = (isItem || isUnit) ? 'e.g. PSKNI701890' : 'e.g. CDHN26HTI020034';
+  const labelMap = { updatestaging: 'Purchase Order Number & Execution ID', item: 'Item ID · Size · Color · Style · Company', unit: 'Item ID' };
   document.getElementById('query-bar-label').textContent = labelMap[m] || 'Purchase Order Number';
   updateSQLPreview();
 }
@@ -123,6 +126,23 @@ ${kw('WHERE')} i.ITEMID ${kw('=')} ${vl("'" + po + "'")}
   ${kw('AND')} INVENTCOLORID ${kw('=')} ${vl("'" + color + "'")}
   ${kw('AND')} INVENTSTYLEID ${kw('=')} ${vl("'" + season + "'")}
   ${kw('AND')} i.DATAAREAID ${kw('=')} ${vl("'" + company + "'")};`;
+  } else if (mode === 'unit') {
+    const company = document.getElementById('item-company-input')?.value.trim() || '';
+    el.innerHTML = `${kw('SELECT DISTINCT')} TM.ITEMID,
+       UNITID ${kw('AS')} [PO_UNIT], UNITID ${kw('AS')} [SALES_UNIT], UNITID ${kw('AS')} [INVENT_UNIT],
+       BOMUNITID, REQGROUPID,
+       ${kw('CASE')} ${fn('CAST')}(MODULETYPE ${kw('AS')} varchar(10))
+           ${kw('WHEN')} ${vl("'2'")} ${kw('THEN')} ${vl("'Sales Order'")}
+           ${kw('WHEN')} ${vl("'0'")} ${kw('THEN')} ${vl("'Purchase Order'")}
+           ${kw('WHEN')} ${vl("'1'")} ${kw('THEN')} ${vl("'Inventory'")}
+           ${kw('ELSE')} ${fn('CAST')}(MODULETYPE ${kw('AS')} varchar(10))
+       ${kw('END AS')} MODULETYPE,
+       TM.DATAAREAID ${kw('AS')} [Company]
+${kw('FROM')} InventTableModule TM
+${kw('JOIN')} INVENTTABLE I ${kw('ON')} TM.ITEMID ${kw('=')} I.ITEMID
+${kw('WHERE')} TM.ITEMID ${kw('=')} ${vl("'" + po + "'")}
+  ${kw('AND')} (${vl("'" + (company || '') + "'")} ${kw('=')} ${vl("''")} ${kw('OR')} TM.DATAAREAID ${kw('=')} ${vl("'" + (company || '') + "'")})
+${kw('ORDER BY')} TM.DATAAREAID;`;
   } else if (mode === 'compare') {
     el.innerHTML = `<span style="color:var(--accent)">── QUERY 1 (Staging)</span>
 ${kw('SELECT')} LINENUMBER, ITEMID, INVENTSIZEID, INVENTCOLORID, PURCHQTY, PURCHPRICE, LINEAMOUNT, TRANSFERSTATUS

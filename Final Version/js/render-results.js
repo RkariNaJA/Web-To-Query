@@ -4,7 +4,7 @@ function renderResults(rows, po, serverTotalQty, serverTotalAmount, raw = {}) {
   const modeInfo = MODES[mode] ?? { label: mode.toUpperCase(), tagClass: 'tag-update', navClass: 'active-update' };
 
   if (rows.length === 0) {
-    const icons = { search: '⊘', list: '✅', count: '⊘', update: '⊘', packroll: '⊘', check: '⊘', item: '⊘' };
+    const icons = { search: '⊘', list: '✅', count: '⊘', update: '⊘', packroll: '⊘', check: '⊘', item: '⊘', unit: '⊘' };
     const msgs = {
       search: `No staging data found for PO <strong>${po}</strong>.`,
       list: `✅ No errors — all lines transferred successfully for PO <strong>${po}</strong>.`,
@@ -12,7 +12,8 @@ function renderResults(rows, po, serverTotalQty, serverTotalAmount, raw = {}) {
       update: `No Pack/Roll records found for PO <strong>${po}</strong>.`,
       packroll: `No QTY Pack/Roll lines found for PO <strong>${po}</strong>.`,
       check: `No BotPO data found for PO <strong>${po}</strong>.`,
-      item: `No variants found for Item ID <strong>${po}</strong>.`
+      item: `No variants found for Item ID <strong>${po}</strong>.`,
+      unit: `No unit data found for Item ID <strong>${po}</strong>.`
     };
     area.innerHTML = `
       <div class="state-box" style="border-style:solid;border-color:${mode === 'list' ? 'rgba(62,207,142,0.3)' : 'var(--border)'};">
@@ -46,6 +47,9 @@ function renderResults(rows, po, serverTotalQty, serverTotalAmount, raw = {}) {
   } else if (mode === 'item') {
     cols = ['ITEM ID', 'SIZE', 'COLOR', 'SEASON', 'COMPANY'];
     colKeys = ['ITEMID', 'INVENTSIZEID', 'INVENTCOLORID', 'INVENTSTYLEID', 'Company'];
+  } else if (mode === 'unit') {
+    cols = ['ITEM ID', 'PO UNIT', 'SALES UNIT', 'INVENT UNIT', 'BOM UNIT', 'REQ GROUP', 'MODULE TYPE', 'COMPANY'];
+    colKeys = ['ITEMID', 'PO_UNIT', 'SALES_UNIT', 'INVENT_UNIT', 'BOMUNITID', 'REQGROUPID', 'MODULETYPE', 'Company'];
   } else {
     cols = ['ARRIVAL NUM', 'PO', 'LOCATIONID', 'SITE', 'CREATED', 'POSTED DATE', 'POSTED', 'CREATED BY'];
     colKeys = ['ITEMARRIVALNUM', 'PURCHID', 'INVENTLOCATIONID', 'INVENTSITEID', 'CREATEDDATETIME', 'POSTEDDATETIME', 'POSTED', 'CREATEDBY'];
@@ -322,6 +326,30 @@ function renderResults(rows, po, serverTotalQty, serverTotalAmount, raw = {}) {
       <button onclick="document.getElementById('item-filter-size').value='';document.getElementById('item-filter-color').value='';document.getElementById('item-filter-style').value='';document.getElementById('item-filter-company').value='';applyItemFilter();"
         style="align-self:flex-end;padding:5px 12px;background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);font-family:var(--mono);font-size:11px;border-radius:6px;cursor:pointer;">✕ Clear</button>
     </div>`;
+  } else if (mode === 'unit') {
+    lastUnitRows = rows;
+    const uniqUCompanies = [...new Set(rows.map(r => getVal(r, 'Company')).filter(v => v != null && v !== ''))].sort();
+    const uniqUModules   = [...new Set(rows.map(r => getVal(r, 'MODULETYPE')).filter(v => v != null && v !== ''))].sort();
+    const mkUnitSelect = (id, label, opts) => `
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);letter-spacing:0.06em;text-transform:uppercase;">${label}</div>
+        <select id="${id}" onchange="applyUnitFilter()"
+          style="background:var(--surface2);border:1px solid var(--border);color:var(--text-primary);font-family:var(--mono);font-size:11px;padding:5px 8px;border-radius:6px;cursor:pointer;min-width:130px;">
+          <option value="">All</option>
+          ${opts.map(v => `<option value="${v}">${v}</option>`).join('')}
+        </select>
+      </div>`;
+    summaryHTML = `<div class="summary-row">
+      <div class="summary-card"><div class="summary-label">Total Rows</div><div class="summary-value" style="color:#818cf8;" id="unit-line-count">${rows.length}</div></div>
+      <div class="summary-card"><div class="summary-label">Companies</div><div class="summary-value" id="unit-summary-companies">${uniqUCompanies.length}</div></div>
+      <div class="summary-card"><div class="summary-label">Module Types</div><div class="summary-value" id="unit-summary-modules">${uniqUModules.length}</div></div>
+    </div>
+    <div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;padding:10px 0 4px;">
+      ${mkUnitSelect('unit-filter-company', 'Company', uniqUCompanies)}
+      ${mkUnitSelect('unit-filter-module', 'Module Type', uniqUModules)}
+      <button onclick="document.getElementById('unit-filter-company').value='';document.getElementById('unit-filter-module').value='';applyUnitFilter();"
+        style="align-self:flex-end;padding:5px 12px;background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);font-family:var(--mono);font-size:11px;border-radius:6px;cursor:pointer;">✕ Clear</button>
+    </div>`;
   } else {
     const posted = rows.filter(r => parseInt(r.POSTED) === 1).length;
     summaryHTML = `<div class="summary-row">
@@ -331,7 +359,7 @@ function renderResults(rows, po, serverTotalQty, serverTotalAmount, raw = {}) {
     </div>`;
   }
 
-  const poLabel = mode === 'item' ? 'Item ID' : 'PO';
+  const poLabel = (mode === 'item' || mode === 'unit') ? 'Item ID' : 'PO';
   let missingPOsHTML = '';
   if (mode === 'update' || mode === 'packroll') {
     const qPOs = po.split(',').map(s => s.trim()).filter(Boolean);
@@ -346,12 +374,13 @@ function renderResults(rows, po, serverTotalQty, serverTotalAmount, raw = {}) {
     <div class="results-meta">
       <span class="results-count">Showing <strong>${rows.length}</strong> row${rows.length !== 1 ? 's' : ''} for ${poLabel} <strong>${po}</strong>${missingPOsHTML}</span>
       <span class="tag ${modeInfo.tagClass}">${modeInfo.label}</span>
-      <button onclick="exportToExcel()" style="margin-left:auto;padding:5px 14px;background:var(--surface2);border:1px solid var(--green);color:var(--green);font-family:var(--mono);font-size:11px;border-radius:6px;cursor:pointer;letter-spacing:0.05em;font-weight:600;transition:all 0.15s;" onmouseover="this.style.background='var(--green-glow)'" onmouseout="this.style.background='var(--surface2)'">⬇ Export Excel</button>
+      ${mode === 'unit' ? `<button onclick="showUnitSummary()" style="margin-left:auto;padding:5px 14px;background:var(--surface2);border:1px solid #818cf8;color:#818cf8;font-family:var(--mono);font-size:11px;border-radius:6px;cursor:pointer;letter-spacing:0.05em;font-weight:600;transition:all 0.15s;" onmouseover="this.style.background='rgba(129,140,248,0.1)'" onmouseout="this.style.background='var(--surface2)'">≡ Summarize</button>` : ''}
+      <button onclick="exportToExcel()" style="${mode === 'unit' ? '' : 'margin-left:auto;'}padding:5px 14px;background:var(--surface2);border:1px solid var(--green);color:var(--green);font-family:var(--mono);font-size:11px;border-radius:6px;cursor:pointer;letter-spacing:0.05em;font-weight:600;transition:all 0.15s;" onmouseover="this.style.background='var(--green-glow)'" onmouseout="this.style.background='var(--surface2)'">⬇ Export Excel</button>
     </div>
     <div class="table-wrap">
       <table>
         <thead><tr>${cols.map(c => `<th>${c}</th>`).join('')}</tr></thead>
-        <tbody id="${mode === 'count' ? 'count-tbody' : mode === 'search' ? 'search-tbody' : mode === 'packroll' ? 'packroll-tbody' : mode === 'item' ? 'item-tbody' : ''}">${rows_html}</tbody>
+        <tbody id="${mode === 'count' ? 'count-tbody' : mode === 'search' ? 'search-tbody' : mode === 'packroll' ? 'packroll-tbody' : mode === 'item' ? 'item-tbody' : mode === 'unit' ? 'unit-tbody' : ''}">${rows_html}</tbody>
       </table>
     </div>`;
 }

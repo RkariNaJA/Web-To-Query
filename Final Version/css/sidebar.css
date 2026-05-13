@@ -118,6 +118,13 @@ aside {
   box-shadow: inset 2px 0 10px rgba(244, 114, 182, 0.06);
 }
 
+.nav-item.active-unit {
+  border-left-color: #818cf8;
+  background: linear-gradient(90deg, rgba(129, 140, 248, 0.09) 0%, transparent 75%);
+  color: #818cf8;
+  box-shadow: inset 2px 0 10px rgba(129, 140, 248, 0.06);
+}
+
 .nav-icon {
   font-family: var(--mono);
   font-size: 13px;

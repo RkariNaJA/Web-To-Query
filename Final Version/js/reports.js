@@ -391,6 +391,223 @@ function showErrorSummary() {
   win.document.close();
 }
 
+// ── Unit Summarize ─────────────────────────────────────────────────
+function showUnitSummary() {
+  if (!lastUnitRows.length) return;
+
+  const rows = lastUnitRows;
+  const gv = (r, key) => { const k = key.toLowerCase(); for (const j in r) if (j.toLowerCase() === k) return r[j]; return undefined; };
+  const uniq = key => [...new Set(rows.map(r => gv(r, key)).filter(v => v != null && v !== ''))].sort();
+
+  const allCompanies = uniq('Company');
+  const allModules   = uniq('MODULETYPE');
+  const allItems     = uniq('ITEMID');
+  const totalRows    = rows.length;
+
+  const mkOpts = arr => arr.map(v => `<option value="${v}">${v}</option>`).join('');
+  const selStyle = `background:#1a1e28;border:1px solid #3a4258;color:#e2e6f0;font-family:'IBM Plex Mono',monospace;font-size:11px;padding:5px 8px;border-radius:6px;cursor:pointer;min-width:140px;`;
+  const lblStyle = `font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6b7494;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px;`;
+  const th = (txt, extra='') => `<th style="padding:10px 14px;text-align:left;font-size:10px;letter-spacing:0.07em;color:#6b7494;text-transform:uppercase;border-bottom:1px solid #252a38;white-space:nowrap;${extra}">${txt}</th>`;
+
+  // Build compare table header: MODULE TYPE | FIELD | [Co1] | [Co2] | ... | MATCH
+  const compareHeader = [th('MODULE TYPE'), th('FIELD'), ...allCompanies.map(c => th(c)), th('MATCH','text-align:center;')].join('');
+
+  const theme = localStorage.getItem('po_theme') || 'dark';
+  const html = `<!DOCTYPE html>
+<html lang="en"${theme !== 'dark' ? ` data-theme="${theme}"` : ''}>
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Unit Summary</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:#0d0f14;color:#e2e6f0;font-family:'IBM Plex Sans',sans-serif;padding:32px;min-height:100vh;}
+    body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(129,140,248,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(129,140,248,0.02) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+    .wrap{position:relative;z-index:1;max-width:1400px;margin:0 auto;}
+    .section-title{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:0.1em;color:#6b7494;text-transform:uppercase;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #252a38;}
+    tbody tr{border-bottom:1px solid #252a38;}
+    tbody tr:last-child{border-bottom:none;}
+    tbody tr:hover td{background:rgba(129,140,248,0.04);}
+    tbody td{padding:9px 14px;color:#e2e6f0;vertical-align:middle;white-space:nowrap;}
+    ::-webkit-scrollbar{width:6px;height:6px;}
+    ::-webkit-scrollbar-track{background:transparent;}
+    ::-webkit-scrollbar-thumb{background:#3a4258;border-radius:3px;}
+    html[data-theme="light"] body{background:#f0f2f8 !important;color:#1a2038 !important;}
+    html[data-theme="light"] tbody tr{border-bottom:1px solid #d0d6e8 !important;}
+    html[data-theme="light"] tbody tr:hover td{background:rgba(129,140,248,0.06) !important;}
+    html[data-theme="light"] tbody td{color:#1a2038 !important;}
+    html[data-theme="light"] thead tr{background:#e8ecf4 !important;}
+    html[data-theme="light"] td[colspan]{background:#e8ecf4 !important;border-top-color:#b8c2d8 !important;border-bottom-color:#d0d6e8 !important;}
+    html[data-theme="light"] button,html[data-theme="light"] select{background:#ffffff !important;border-color:#b8c2d8 !important;color:#5a6478 !important;}
+    html[data-theme="light"] .section-title{color:#5a6478 !important;border-bottom-color:#d0d6e8 !important;}
+    html[data-theme="light"] ::-webkit-scrollbar-thumb{background:#b8c2d8 !important;}
+    html[data-theme="space"] body{background:#07051a !important;color:#e0d8ff !important;}
+    html[data-theme="space"] tbody tr{border-bottom:1px solid #2a2660 !important;}
+    html[data-theme="space"] tbody tr:hover td{background:rgba(139,92,246,0.07) !important;}
+    html[data-theme="space"] tbody td{color:#e0d8ff !important;}
+    html[data-theme="space"] thead tr{background:#151232 !important;}
+    html[data-theme="space"] td[colspan]{background:#0e0c28 !important;border-top-color:#3d3880 !important;border-bottom-color:#2a2660 !important;}
+    html[data-theme="space"] button,html[data-theme="space"] select{background:#151232 !important;border-color:#3d3880 !important;color:#6b63a0 !important;}
+    html[data-theme="space"] .section-title{color:#6b63a0 !important;border-bottom-color:#2a2660 !important;}
+    html[data-theme="space"] ::-webkit-scrollbar-thumb{background:#3d3880 !important;}
+  </style>
+</head>
+<body><div class="wrap">
+  <!-- Header -->
+  <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid #252a38;">
+    <div style="width:32px;height:32px;background:#818cf8;border-radius:8px;display:grid;place-items:center;font-size:16px;flex-shrink:0;color:#0d0f14;">◇</div>
+    <div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;letter-spacing:0.06em;">UNIT SUMMARY</div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6b7494;margin-top:3px;">${allItems.length} item${allItems.length !== 1 ? 's' : ''} · ${allCompanies.length} compan${allCompanies.length !== 1 ? 'ies' : 'y'} · ${allModules.length} module type${allModules.length !== 1 ? 's' : ''} · ${totalRows} rows</div>
+    </div>
+    <button onclick="window.print()" style="margin-left:auto;padding:8px 16px;background:#1a1e28;border:1px solid #3a4258;color:#6b7494;font-family:'IBM Plex Mono',monospace;font-size:11px;border-radius:6px;cursor:pointer;">⎙ Print</button>
+  </div>
+  <!-- Filter bar -->
+  <div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;padding-bottom:24px;">
+    <div><div style="${lblStyle}">Company</div><select id="f-company" onchange="applyFilter()" style="${selStyle}"><option value="">All</option>${mkOpts(allCompanies)}</select></div>
+    <div><div style="${lblStyle}">Module Type</div><select id="f-module" onchange="applyFilter()" style="${selStyle}"><option value="">All</option>${mkOpts(allModules)}</select></div>
+    <button onclick="document.getElementById('f-company').value='';document.getElementById('f-module').value='';applyFilter();"
+      style="align-self:flex-end;padding:5px 12px;background:#13161d;border:1px solid #3a4258;color:#6b7494;font-family:'IBM Plex Mono',monospace;font-size:11px;border-radius:6px;cursor:pointer;">✕ Clear</button>
+    <span id="row-count" style="align-self:flex-end;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6b7494;margin-left:auto;">${totalRows} rows</span>
+  </div>
+  <!-- Compare table (top) -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #252a38;">
+    <div class="section-title" style="margin-bottom:0;padding-bottom:0;border-bottom:none;">Company Comparison</div>
+    <button onclick="(function(){var el=document.getElementById('compare-wrap');var btn=document.getElementById('compare-toggle');var hidden=el.style.display==='none';el.style.display=hidden?'':'none';btn.textContent=hidden?'▲ Hide':'▼ Show';})()" id="compare-toggle"
+      style="padding:3px 10px;background:#13161d;border:1px solid #3a4258;color:#6b7494;font-family:'IBM Plex Mono',monospace;font-size:10px;border-radius:5px;cursor:pointer;letter-spacing:0.05em;">▲ Hide</button>
+  </div>
+  <div id="compare-wrap" style="overflow-x:auto;border:1px solid #252a38;border-radius:8px;margin-bottom:32px;">
+    <table style="width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:12px;">
+      <thead><tr style="background:#1a1e28;">${compareHeader}</tr></thead>
+      <tbody id="unit-compare-tbody"></tbody>
+    </table>
+  </div>
+  <!-- Detail table (bottom) -->
+  <div class="section-title">Detail by Company</div>
+  <div style="overflow-x:auto;border:1px solid #252a38;border-radius:8px;">
+    <table style="width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:12px;">
+      <thead><tr style="background:#1a1e28;">${[th('ITEM ID'),th('MODULE TYPE'),th('PO UNIT'),th('SALES UNIT'),th('INVENT UNIT'),th('BOM UNIT'),th('REQ GROUP')].join('')}</tr></thead>
+      <tbody id="unit-sum-tbody"></tbody>
+    </table>
+  </div>
+</div>
+<script>
+  const ALL_ROWS = ${JSON.stringify(rows)};
+  const ALL_COMPANIES = ${JSON.stringify(allCompanies)};
+  const FIELDS = ['PO_UNIT','SALES_UNIT','INVENT_UNIT','BOMUNITID','REQGROUPID'];
+  const FIELD_LABELS = {'PO_UNIT':'PO Unit','SALES_UNIT':'Sales Unit','INVENT_UNIT':'Invent Unit','BOMUNITID':'BOM Unit','REQGROUPID':'Req Group'};
+  const MODULE_COLORS = {'Sales Order':'#818cf8','Purchase Order':'#3ecf8e','Inventory':'#fb923c'};
+
+  function gv(r,k){const kl=k.toLowerCase();for(const j in r)if(j.toLowerCase()===kl)return r[j];return undefined;}
+  function modColor(m){return MODULE_COLORS[m]||'#e2e6f0';}
+
+  function buildCompareTable(data){
+    // Build pivot: module → field → company → value
+    const pivot={};
+    const modules=[...new Set(data.map(r=>gv(r,'MODULETYPE')).filter(Boolean))].sort();
+    const companies=[...new Set(data.map(r=>gv(r,'Company')).filter(Boolean))].sort();
+
+    data.forEach(r=>{
+      const m=gv(r,'MODULETYPE')||'(unknown)';
+      const c=gv(r,'Company')||'(unknown)';
+      if(!pivot[m])pivot[m]={};
+      if(!pivot[m][c])pivot[m][c]={};
+      FIELDS.forEach(f=>{pivot[m][c][f]=gv(r,f)??'—';});
+    });
+
+    const colCount=2+companies.length+1; // MODULE TYPE + FIELD + companies + MATCH
+    let html='';
+    modules.forEach((mod,mi)=>{
+      const mc=modColor(mod);
+      // Module type header row
+      html+=\`<tr>
+        <td colspan="\${colCount}" style="padding:8px 14px;background:#13161d;border-top:\${mi===0?'none':'2px solid #252a38'};border-bottom:1px solid #252a38;">
+          <span style="font-size:10px;padding:3px 10px;border-radius:4px;font-weight:700;color:\${mc};background:rgba(129,140,248,0.08);border:1px solid rgba(129,140,248,0.2);letter-spacing:0.06em;">\${mod}</span>
+        </td></tr>\`;
+      // One row per field
+      FIELDS.forEach((field,fi)=>{
+        const vals=companies.map(c=>pivot[mod]?.[c]?.[field]??'—');
+        const allSame=vals.every(v=>v===vals[0]);
+        const matchBadge=allSame
+          ? \`<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;background:rgba(62,207,142,0.12);color:#3ecf8e;border:1px solid rgba(62,207,142,0.3);">✓ Match</span>\`
+          : \`<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;background:rgba(251,146,60,0.12);color:#fb923c;border:1px solid rgba(251,146,60,0.3);">✗ Differ</span>\`;
+        const rowBg=fi%2===0?'background:rgba(255,255,255,0.01);':'';
+        const companyCells=companies.map((c,ci)=>{
+          const v=pivot[mod]?.[c]?.[field]??'—';
+          const isDiff=!allSame;
+          const cellColor=isDiff?(v!==vals[0]||vals.filter(x=>x===v).length<vals.length)?'#fb923c':'#e2e6f0':'#e2e6f0';
+          const cellBg=isDiff?'background:rgba(251,146,60,0.06);':'';
+          return \`<td style="\${cellBg}color:\${cellColor};font-weight:\${isDiff?600:400};">\${v}</td>\`;
+        }).join('');
+        html+=\`<tr style="\${rowBg}">
+          <td style="color:#6b7494;font-size:11px;padding-left:28px;"> </td>
+          <td style="color:#6b7494;font-size:11px;">\${FIELD_LABELS[field]}</td>
+          \${companyCells}
+          <td style="text-align:center;">\${matchBadge}</td>
+        </tr>\`;
+      });
+    });
+
+    document.getElementById('unit-compare-tbody').innerHTML=html||
+      \`<tr><td colspan="\${colCount}" style="padding:20px;text-align:center;color:#6b7494;">No data.</td></tr>\`;
+  }
+
+  function buildDetailTable(data){
+    const companyGroups={};
+    data.forEach(r=>{const c=gv(r,'Company')||'(unknown)';if(!companyGroups[c])companyGroups[c]=[];companyGroups[c].push(r);});
+    const html=Object.entries(companyGroups).sort(([a],[b])=>a.localeCompare(b)).map(([company,crows])=>{
+      const moduleGroups={};
+      crows.forEach(r=>{const m=gv(r,'MODULETYPE')||'(unknown)';if(!moduleGroups[m])moduleGroups[m]=[];moduleGroups[m].push(r);});
+      const mCount=Object.keys(moduleGroups).length;
+      const companyHeader=\`<tr>
+        <td colspan="7" style="padding:10px 14px;background:#13161d;border-top:2px solid #818cf8;border-bottom:1px solid #252a38;">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;color:#818cf8;">\${company}</span>
+          <span style="margin-left:10px;font-size:10px;padding:2px 7px;border-radius:3px;background:rgba(129,140,248,0.12);color:#818cf8;border:1px solid rgba(129,140,248,0.3);">\${crows.length} ROW\${crows.length!==1?'S':''}</span>
+          <span style="margin-left:6px;font-size:10px;padding:2px 7px;border-radius:3px;background:rgba(129,140,248,0.08);color:#818cf8;border:1px solid rgba(129,140,248,0.2);">\${mCount} MODULE TYPE\${mCount!==1?'S':''}</span>
+        </td></tr>\`;
+      const moduleRows=Object.entries(moduleGroups).sort(([a],[b])=>a.localeCompare(b)).flatMap(([mod,mrows])=>{
+        const mc=modColor(mod);
+        const modHeader=\`<tr>
+          <td colspan="7" style="padding:7px 14px 7px 28px;background:#0d0f14;border-bottom:1px solid #252a38;">
+            <span style="font-size:10px;padding:2px 8px;border-radius:4px;font-weight:700;color:\${mc};background:rgba(129,140,248,0.08);border:1px solid rgba(129,140,248,0.2);letter-spacing:0.05em;">\${mod}</span>
+            <span style="margin-left:8px;font-size:10px;color:#6b7494;">\${mrows.length} row\${mrows.length!==1?'s':''}</span>
+          </td></tr>\`;
+        const dataRows=mrows.map(r=>\`<tr>
+          <td style="color:#818cf8;font-weight:600;padding-left:42px;">\${gv(r,'ITEMID')??'—'}</td>
+          <td><span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;color:\${mc};background:rgba(129,140,248,0.06);border:1px solid rgba(129,140,248,0.15);">\${mod}</span></td>
+          <td>\${gv(r,'PO_UNIT')??'—'}</td>
+          <td>\${gv(r,'SALES_UNIT')??'—'}</td>
+          <td>\${gv(r,'INVENT_UNIT')??'—'}</td>
+          <td style="color:#f0c060;">\${gv(r,'BOMUNITID')??'—'}</td>
+          <td style="color:#6b7494;">\${gv(r,'REQGROUPID')??'—'}</td>
+        </tr>\`).join('');
+        return modHeader+dataRows;
+      }).join('');
+      return companyHeader+moduleRows;
+    }).join('');
+    document.getElementById('unit-sum-tbody').innerHTML=html||'<tr><td colspan="7" style="padding:20px;text-align:center;color:#6b7494;">No results match.</td></tr>';
+    document.getElementById('row-count').textContent=data.length+' rows';
+  }
+
+  function applyFilter(){
+    const fCo=document.getElementById('f-company').value;
+    const fMod=document.getElementById('f-module').value;
+    const filtered=ALL_ROWS.filter(r=>(!fCo||gv(r,'Company')===fCo)&&(!fMod||gv(r,'MODULETYPE')===fMod));
+    buildCompareTable(filtered);
+    buildDetailTable(filtered);
+  }
+
+  buildCompareTable(ALL_ROWS);
+  buildDetailTable(ALL_ROWS);
+<\/script>
+</body></html>`;
+
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+}
+
 // ── BotPO Check Summarize ──────────────────────────────────────────
 function showCheckSummary() {
   if (!lastCheckRows.length) return;

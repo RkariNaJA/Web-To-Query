@@ -34,6 +34,11 @@ async function runQuery() {
       const { rows, raw } = await fetchQuery('item', po, null, { inventSizeId, inventColorId, inventStyleId, dataAreaId });
       addHistory(po, mode, raw.totalRows ?? rows.length);
       renderResults(rows, po, null, null, raw);
+    } else if (mode === 'unit') {
+      const dataAreaId = document.getElementById('item-company-input')?.value.trim() || '';
+      const { rows, raw } = await fetchQuery('unit', po, null, { dataAreaId });
+      addHistory(po, mode, raw.totalRows ?? rows.length);
+      renderResults(rows, po, null, null, raw);
     } else if (mode === 'comparedbc') {
       const [stagingRes, dbcRes] = await Promise.all([
         fetchQuery('search', po),

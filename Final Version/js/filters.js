@@ -38,6 +38,39 @@ function applyItemFilter() {
   if (stylesEl) stylesEl.textContent = uniqStyles.length;
 }
 
+// ── Check Unit On AX Filter ────────────────────────────────────────
+function applyUnitFilter() {
+  const tbody = document.getElementById('unit-tbody');
+  if (!tbody || !lastUnitRows.length) return;
+
+  const fCompany = document.getElementById('unit-filter-company')?.value || '';
+  const fModule  = document.getElementById('unit-filter-module')?.value  || '';
+
+  const filtered = lastUnitRows.filter(r => {
+    if (fCompany && getVal(r, 'Company')    !== fCompany) return false;
+    if (fModule  && getVal(r, 'MODULETYPE') !== fModule)  return false;
+    return true;
+  });
+
+  const colKeys = ['ITEMID', 'PO_UNIT', 'SALES_UNIT', 'INVENT_UNIT', 'BOMUNITID', 'REQGROUPID', 'MODULETYPE', 'Company'];
+  tbody.innerHTML = filtered.map(r =>
+    '<tr>' + colKeys.map(k => {
+      const v = r[k] != null && r[k] !== '' ? r[k] : '—';
+      return v === '—' ? `<td class="td-dim">—</td>` : `<td>${v}</td>`;
+    }).join('') + '</tr>'
+  ).join('');
+
+  const lineCount = document.getElementById('unit-line-count');
+  if (lineCount) lineCount.textContent = filtered.length;
+
+  const uniqCompanies = [...new Set(filtered.map(r => getVal(r, 'Company')).filter(v => v != null && v !== ''))];
+  const uniqModules   = [...new Set(filtered.map(r => getVal(r, 'MODULETYPE')).filter(v => v != null && v !== ''))];
+  const companiesEl = document.getElementById('unit-summary-companies');
+  const modulesEl   = document.getElementById('unit-summary-modules');
+  if (companiesEl) companiesEl.textContent = uniqCompanies.length;
+  if (modulesEl)   modulesEl.textContent   = uniqModules.length;
+}
+
 // ── Search PO DBC Filter ───────────────────────────────────────────
 function applyDBCHeaderFilter() {
   const tbody = document.getElementById('searchdbc-header-tbody');
