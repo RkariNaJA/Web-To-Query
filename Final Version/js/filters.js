@@ -71,6 +71,45 @@ function applyUnitFilter() {
   if (modulesEl)   modulesEl.textContent   = uniqModules.length;
 }
 
+// ── BotPO Checking Filter ──────────────────────────────────────────
+function applyCheckFilter() {
+  const tbody = document.getElementById('check-tbody');
+  if (!tbody || !lastCheckRows.length) return;
+
+  const fPO     = document.getElementById('check-filter-po')?.value     || '';
+  const fItemId = document.getElementById('check-filter-itemid')?.value || '';
+
+  const filtered = lastCheckRows.filter(r => {
+    if (fPO     && getVal(r, 'PURCHID') !== fPO)     return false;
+    if (fItemId && getVal(r, 'ITEMID')  !== fItemId) return false;
+    return true;
+  });
+
+  // Same columns and cell treatment renderResults uses for check mode, so a
+  // filtered table is indistinguishable from an unfiltered one.
+  const colKeys = ['EXECUTIONID', 'INVENTSITEID', 'LINENUMBER', 'PURCHID', 'ITEMID', 'INVENTSIZEID', 'INVENTCOLORID', 'INVENTSEASONID'];
+  tbody.innerHTML = filtered.map(r =>
+    '<tr>' + colKeys.map(k => {
+      let val = getVal(r, k);
+      val = (val !== undefined && val !== null && val !== '') ? val : '—';
+      if (k === 'LINENUMBER') return `<td class="num">${val}</td>`;
+      if (val === '—') return `<td class="td-dim">—</td>`;
+      return `<td>${val}</td>`;
+    }).join('') + '</tr>'
+  ).join('');
+
+  const lineCount = document.getElementById('check-line-count');
+  if (lineCount) lineCount.textContent = filtered.length;
+
+  // Exec ID and Sites are joined lists, not counts, so they are recomputed
+  // from the filtered set rather than left showing the unfiltered values.
+  const uniqJoin = key => [...new Set(filtered.map(r => getVal(r, key)).filter(v => v && v !== '—'))].join(', ') || '—';
+  const execEl = document.getElementById('check-summary-execids');
+  if (execEl) execEl.textContent = uniqJoin('EXECUTIONID');
+  const sitesEl = document.getElementById('check-summary-sites');
+  if (sitesEl) sitesEl.textContent = uniqJoin('INVENTSITEID');
+}
+
 // ── Search PO DBC Filter ───────────────────────────────────────────
 function applyDBCHeaderFilter() {
   const tbody = document.getElementById('searchdbc-header-tbody');

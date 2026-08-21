@@ -215,14 +215,32 @@ function renderResults(rows, po, serverTotalQty, serverTotalAmount, raw = {}) {
     const uniq = key => [...new Set(rows.map(r => getVal(r, key)).filter(v => v && v !== '—'))].join(', ') || '—';
     const execIds = uniq('EXECUTIONID');
     const sites = uniq('INVENTSITEID');
+    // Own copies: the item branch declares these with const inside its own
+    // block, so they are not in scope here.
+    const checkOpts = key => [...new Set(rows.map(r => getVal(r, key)).filter(v => v != null && v !== '' && v !== '—'))].sort();
+    const checkSelect = (id, label, opts) => `
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);letter-spacing:0.06em;text-transform:uppercase;">${label}</div>
+        <select id="${id}" onchange="applyCheckFilter()"
+          style="background:var(--surface2);border:1px solid var(--border);color:var(--text-primary);font-family:var(--mono);font-size:11px;padding:5px 8px;border-radius:6px;cursor:pointer;min-width:130px;">
+          <option value="">All</option>
+          ${opts.map(v => `<option value="${v}">${v}</option>`).join('')}
+        </select>
+      </div>`;
     summaryHTML = `
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
         <div class="summary-row" style="flex:1;flex-wrap:wrap;align-items:stretch;">
-          <div class="summary-card" style="flex:none;min-width:110px;"><div class="summary-label">Total Lines</div><div class="summary-value red">${rows.length}</div></div>
-          <div class="summary-card" style="flex:2;min-width:160px;"><div class="summary-label">Exec ID</div><div class="summary-value small" style="color:var(--green);word-break:break-word;white-space:normal;">${execIds}</div></div>
-          <div class="summary-card" style="flex:none;min-width:110px;"><div class="summary-label">Sites</div><div class="summary-value small" style="color:var(--teal);word-break:break-word;white-space:normal;">${sites}</div></div>
+          <div class="summary-card" style="flex:none;min-width:110px;"><div class="summary-label">Total Lines</div><div class="summary-value red" id="check-line-count">${rows.length}</div></div>
+          <div class="summary-card" style="flex:2;min-width:160px;"><div class="summary-label">Exec ID</div><div class="summary-value small" id="check-summary-execids" style="color:var(--green);word-break:break-word;white-space:normal;">${execIds}</div></div>
+          <div class="summary-card" style="flex:none;min-width:110px;"><div class="summary-label">Sites</div><div class="summary-value small" id="check-summary-sites" style="color:var(--teal);word-break:break-word;white-space:normal;">${sites}</div></div>
         </div>
         <button onclick="showCheckSummary()" style="flex-shrink:0;padding:9px 18px;background:var(--red);color:#0d0f14;border:none;border-radius:8px;font-family:var(--mono);font-size:12px;font-weight:600;cursor:pointer;letter-spacing:0.05em;transition:all 0.15s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">≡ Error Summarize</button>
+      </div>
+      <div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;padding:10px 0 4px;">
+        ${checkSelect('check-filter-po', 'PO', checkOpts('PURCHID'))}
+        ${checkSelect('check-filter-itemid', 'Item ID', checkOpts('ITEMID'))}
+        <button onclick="['check-filter-po','check-filter-itemid'].forEach(id=>document.getElementById(id).value='');applyCheckFilter();"
+          style="align-self:flex-end;padding:5px 12px;background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);font-family:var(--mono);font-size:11px;border-radius:6px;cursor:pointer;">✕ Clear</button>
       </div>`;
   } else if (mode === 'updatestaging') {
     const success = raw.success === true;
@@ -380,7 +398,7 @@ function renderResults(rows, po, serverTotalQty, serverTotalAmount, raw = {}) {
     <div class="table-wrap">
       <table>
         <thead><tr>${cols.map(c => `<th>${c}</th>`).join('')}</tr></thead>
-        <tbody id="${mode === 'count' ? 'count-tbody' : mode === 'search' ? 'search-tbody' : mode === 'packroll' ? 'packroll-tbody' : mode === 'item' ? 'item-tbody' : mode === 'unit' ? 'unit-tbody' : ''}">${rows_html}</tbody>
+        <tbody id="${mode === 'count' ? 'count-tbody' : mode === 'search' ? 'search-tbody' : mode === 'packroll' ? 'packroll-tbody' : mode === 'item' ? 'item-tbody' : mode === 'unit' ? 'unit-tbody' : mode === 'check' ? 'check-tbody' : ''}">${rows_html}</tbody>
       </table>
     </div>`;
 }
