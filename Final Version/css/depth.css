@@ -1,0 +1,168 @@
+/* ================================================================
+   DEPTH  —  CSS-only 3D for the summary cards
+   ================================================================
+   No JS, no library. Extends .summary-card (summary.css); nothing here
+   restyles it, so removing this one <link> returns the app to flat.
+
+   Load LAST, after space-theme.css, so the .summary-card rules win on
+   equal specificity and the per-theme variables below are not overridden.
+
+   Two constraints shaped this:
+
+   1. .summary-card sets `overflow: hidden` (for the ::before hairline).
+      Per spec, any overflow other than `visible` forces `preserve-3d` to
+      compute to `flat` — so the card's CHILDREN cannot live in 3D. The
+      card itself is transformed instead, which is all this effect needs.
+
+   2. `perspective` sits on .summary-row, not on each card. Per-card
+      perspective gives every card its own vanishing point, so a row of
+      them tilts inconsistently — cards on the left and right lean the
+      same way instead of away from the viewer. One perspective on the
+      parent makes the row read as a single physical plane.
+   ================================================================ */
+
+/* ── Per-theme depth cues ────────────────────────────────────────
+   A lift shadow cannot be one value across three themes: near-black
+   under a #060810 surface reads as depth, under a #eef1f9 one it reads
+   as dirt. Space gets a violet cast to match its accent. */
+
+:root {
+  --lift-shadow: 0 18px 34px -12px rgba(0, 0, 0, 0.72);
+  --lift-ambient: 0 2px 10px rgba(0, 0, 0, 0.4);
+  --lift-rim: rgba(91, 156, 246, 0.34);
+  --lift-recede: 0.55;
+}
+
+html[data-theme="light"] {
+  --lift-shadow: 0 16px 30px -14px rgba(28, 42, 76, 0.28);
+  --lift-ambient: 0 1px 6px rgba(28, 42, 76, 0.1);
+  --lift-rim: rgba(91, 156, 246, 0.4);
+  --lift-recede: 0.62;
+}
+
+html[data-theme="space"] {
+  --lift-shadow: 0 18px 36px -12px rgba(12, 4, 40, 0.8);
+  --lift-ambient: 0 2px 12px rgba(199, 125, 255, 0.14);
+  --lift-rim: rgba(199, 125, 255, 0.42);
+  --lift-recede: 0.5;
+}
+
+/* ── The scene ───────────────────────────────────────────────────
+   800px is deliberately shallow-but-not-fisheye: enough that a 2.5deg
+   tilt is legible, not enough to distort the tabular numbers inside.
+   perspective-origin sits above centre so cards hinge from their top
+   edge, matching where the ::before highlight already is. */
+
+.summary-row {
+  perspective: 800px;
+  perspective-origin: 50% 0%;
+}
+
+/* ── The card ────────────────────────────────────────────────────
+   summary.css transitions border-color and box-shadow only, so transform
+   is added here. will-change is set on the row's children rather than
+   permanently on the card, so the compositor layer is not held for the
+   life of the page. */
+
+.summary-card {
+  transform: translateZ(0);
+  transition:
+    border-color 0.2s,
+    box-shadow 0.28s cubic-bezier(0.22, 0.61, 0.36, 1),
+    transform 0.28s cubic-bezier(0.22, 0.61, 0.36, 1),
+    opacity 0.28s ease;
+}
+
+/* Guarded on hover-capable pointers: on a touchscreen :hover latches
+   after a tap and the card would stay lifted with no way to un-hover. */
+
+@media (hover: hover) and (pointer: fine) {
+
+  .summary-row:hover .summary-card {
+    will-change: transform;
+  }
+
+  /* Lift toward the viewer and tilt the face up. -2.5deg is the ceiling
+     before the mono digits start to shimmer under subpixel AA. */
+  .summary-card:hover {
+    transform: translateZ(26px) rotateX(-2.5deg);
+    box-shadow: var(--lift-shadow), var(--lift-ambient);
+    border-color: var(--border-bright);
+    z-index: 2;
+  }
+
+  /* The lit edge. summary.css already draws a 1px gradient hairline on
+     ::before; as the card tilts its top edge turns toward the light, so
+     that same line brightens and widens instead of a new element being
+     introduced. */
+  .summary-card:hover::before {
+    background: linear-gradient(90deg, transparent, var(--lift-rim), transparent);
+    height: 2px;
+  }
+
+  /* Siblings recede. This is the effect doing most of the work — a lone
+     card lifting is ambiguous, but one card holding still while its
+     neighbours fall back is unmistakably depth. */
+  .summary-row:hover .summary-card:not(:hover) {
+    transform: translateZ(-10px);
+    opacity: var(--lift-recede);
+  }
+
+  /* The two state variants keep their own colour on lift: a mismatch
+     card must not read as "resolved" just because it is being inspected.
+     Their border and background come from summary.css untouched; only
+     the shadow is tinted to match. */
+  .summary-card.highlight-match:hover {
+    box-shadow: var(--lift-shadow), 0 0 22px var(--green-glow-strong);
+  }
+
+  .summary-card.highlight-mismatch:hover {
+    box-shadow: var(--lift-shadow), 0 0 22px var(--red-glow-strong);
+  }
+
+  .summary-card.highlight-match:hover::before {
+    background: linear-gradient(90deg, transparent, var(--green), transparent);
+    height: 2px;
+  }
+
+  .summary-card.highlight-mismatch:hover::before {
+    background: linear-gradient(90deg, transparent, var(--red), transparent);
+    height: 2px;
+  }
+}
+
+/* ── Keyboard parity ─────────────────────────────────────────────
+   Cards are not focusable today, so this does nothing yet. It is here so
+   that adding tabindex later gets the same affordance for free rather
+   than leaving keyboard users with no indication of the active card. */
+
+.summary-card:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 2px;
+  transform: translateZ(26px) rotateX(-2.5deg);
+  box-shadow: var(--lift-shadow), var(--lift-ambient);
+}
+
+/* ── Reduced motion ──────────────────────────────────────────────
+   Vestibular triggers are movement, not depth. The transform is dropped
+   entirely; the brightened rim and shadow stay, so the hover target is
+   still obvious without anything sliding toward the viewer. */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .summary-row {
+    perspective: none;
+  }
+
+  .summary-card,
+  .summary-card:hover,
+  .summary-card:focus-visible,
+  .summary-row:hover .summary-card:not(:hover) {
+    transform: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .summary-row:hover .summary-card:not(:hover) {
+    opacity: 1;
+  }
+}

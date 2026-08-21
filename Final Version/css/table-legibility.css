@@ -1,0 +1,249 @@
+/* ================================================================
+   TABLE LEGIBILITY  —  number alignment · pinned first column
+   ================================================================
+   Additive. Nothing in results.css is edited; drop the <link> and the
+   tables return to their previous behaviour.
+
+   Load LAST, after space-theme.css, so these rules win on equal
+   specificity against the theme files.
+   ================================================================ */
+
+/* ── Per-theme depth for the pinned column ─────────────────────── */
+
+:root {
+  --pin-edge: var(--border-accent);
+  --pin-shadow: 8px 0 14px -8px rgba(0, 0, 0, 0.6);
+}
+
+html[data-theme="light"] {
+  --pin-shadow: 8px 0 14px -8px rgba(28, 42, 76, 0.22);
+}
+
+html[data-theme="space"] {
+  --pin-shadow: 8px 0 16px -8px rgba(12, 4, 40, 0.7);
+}
+
+/* ================================================================
+   1 · NUMERIC ALIGNMENT
+   ================================================================
+   `table` already sets font-family: var(--mono) (results.css), so the
+   digits are IBM Plex Mono and each glyph is the same width. That means
+   tabular-nums is largely redundant HERE -- the real problem is that
+   .num is left-aligned, so two numbers of different length still fail
+   to line up where it counts:
+
+       12,880.50          12,880.50
+       1,111.10     vs        1,111.10
+       ^ decimals adrift      ^ decimals stacked
+
+   For a tool whose whole job is comparing amounts across three
+   databases, the second column is the one you can scan. Right-aligning
+   is the fix; tabular-nums stays only as a cheap safety net for when
+   the webfont has not loaded yet and the fallback sans has proportional
+   digits. */
+
+.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The diff/verdict cells carry numbers too. */
+.diff-ok,
+.diff-bad,
+.diff-zero {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Summary-card figures are already var(--mono); this only guards the
+   same webfont-not-yet-loaded case. */
+.summary-value {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ================================================================
+   2 · PINNED FIRST COLUMN
+   ================================================================
+   .table-wrap is the scroll container (overflow: auto), so `left: 0`
+   pins against it. The compare tables are wide enough that scrolling
+   right loses which line the row belongs to -- the same problem the
+   sticky thead already solves vertically.
+
+   Stacking order matters, and getting it wrong is visible rather than
+   subtle. Five layers:
+
+     normal td ......................... auto  (0)
+     pinned body td .................... 1   above cells sliding under it,
+                                             but BELOW every header cell
+     header column row (tr:last-child) . 2
+     header group row (tr:first-child) . 3
+     pinned header corner .............. 4   above both header rows
+
+   ⚠️ The pinned body cell must be 1, not 3. At 3 it ties with the group
+   header row, and equal z-index falls back to DOM order — tbody comes
+   after thead, so the first body cell painted straight over the LINE INFO
+   label. A pinned column has to slide UNDER the header, never over it.
+
+   ⚠️ The pinned cell needs an OPAQUE background, otherwise the text of
+   the cells passing beneath shows straight through it. That has one
+   deliberate consequence: the four compare row tints (row-match,
+   row-mismatch, row-only-staging, row-only-ax) do NOT continue into
+   the pinned column, which reads as a neutral identifier gutter -- the
+   convention spreadsheets use for row headers.
+
+   The alternative was re-declaring each tint on td:first-child, but
+   theme.css overrides all four and space-theme.css overrides three of
+   them, so that meant 12 values kept in sync across three files with
+   one already inconsistent. A neutral gutter is worth more than that
+   maintenance risk; the tint still starts immediately to its right,
+   where the data is. */
+
+/* `thead tr:last-child` rather than `thead th:first-child`, because in the
+   compare tables the FIRST header row is the colspan group row -- its first
+   cell spans four columns (LINE INFO), and pinning that drags a 4-column
+   block to the left edge where it covers the QTY group label as you scroll.
+   A label that spans columns cannot itself be pinned to one column.
+
+   tr:last-child resolves correctly for both shapes: in a single-row thead
+   (render-results, render-dbc) it IS the only row; in a two-row thead it is
+   the column row, which is the one that lines up with the pinned body
+   cells. The group row scrolls horizontally, as it should. */
+
+.table-wrap thead tr:last-child th:first-child,
+.table-wrap tbody td:first-child {
+  position: sticky;
+  left: 0;
+  /* crisp separator + a soft falloff so the column reads as raised.
+     There is no CSS way to know the container is scrolled, so the
+     falloff is always on rather than appearing on scroll. */
+  box-shadow: 1px 0 0 var(--pin-edge), var(--pin-shadow);
+}
+
+.table-wrap tbody td:first-child {
+  z-index: 1;
+  background-color: var(--surface);
+}
+
+/* The corner: stuck both top and left, so it must sit above both header
+   rows (2-3) and above the pinned body column (1). thead th already sets
+   an opaque background: var(--surface2), so nothing further is needed. */
+.table-wrap thead tr:last-child th:first-child {
+  z-index: 4;
+}
+
+/* Keep the existing row hover readable across the pin. Without this the
+   pinned cell keeps its own background and the hover stops dead at the
+   column edge. */
+.table-wrap tbody tr:hover td:first-child {
+  background-color: var(--surface3);
+}
+
+/* ================================================================
+   3 · TWO-ROW HEADER FIX  (pre-existing bug)
+   ================================================================
+   render-compare.js and render-comparedbc.js emit TWO <tr> in <thead>:
+   a colspan group row (LINE INFO / QTY / AMOUNT ...) then the column
+   row. results.css sticks `thead th` to `top: 0` with no per-row
+   offset, so on scroll the second row pins over the first and the
+   group labels are hidden behind the column labels.
+
+   Single-row tables (render-results, render-dbc) match :first-child
+   only and are unaffected by the nth-child(2) rule.
+
+   ⚠️ Row 1 measures 32.4px (measured, not assumed -- `height` on a th is
+   only a minimum, so forcing it does not make the offset exact). Row 2
+   is offset 31px, i.e. a deliberate ~1.4px OVERLAP.
+
+   Round DOWN, never up. The offset must be SMALLER than row 1's height:
+   an overlap is invisible because row 1 is opaque and has the higher
+   z-index, so it paints over row 2. Set it larger and you get a gap --
+   a hairline of scrolling cell content flickering between the two stuck
+   rows. 33px was tried and produced exactly that.
+
+   If the header's padding or font-size changes in results.css,
+   re-measure and keep --thead-row-h a point or two below the result. */
+
+.table-wrap thead tr:first-child th {
+  top: 0;
+  z-index: 3;
+}
+
+.table-wrap thead tr:nth-child(2) th {
+  top: var(--thead-row-h, 31px);
+  z-index: 2;
+}
+
+/* ================================================================
+   4 · OPAQUE GROUP HEADERS  (pre-existing bug, exposed by §3)
+   ================================================================
+   The QTY / PRICE / STATUS group cells looked "holographic" — body rows
+   were visible straight through them while scrolling.
+
+   Cause: `thead th` sets background: var(--surface2), but the group
+   classes override it with a TRANSLUCENT tint and nothing opaque behind:
+
+     .th-group-staging  rgba(91, 156, 246, 0.08)   ← 8% alpha
+     .th-group-ax       rgba(167, 139, 250, 0.08)
+     .th-group-diff     rgba(45, 212, 191, 0.08)
+     .th-group-base     var(--surface2)            ← the only opaque one,
+                                                     which is why LINE INFO
+                                                     always looked solid
+
+   A class beats an element selector, so the tint won and the opaque base
+   was discarded. The row was always see-through; it only became obvious
+   once §3 stopped the second header row from covering it.
+
+   Fix: compose the SAME visual colour as an opaque one — the tint mixed
+   into the surface rather than laid over it. color-mix does that from the
+   existing theme variables, so no rgba literal is copied here and all
+   three themes stay correct on their own terms.
+
+   The themes remap which hue each group uses, so only that mapping and
+   the alpha are declared per theme:
+
+     dark   staging=accent  ax=purple  diff=teal    @ 8%
+     light  same mapping                            @ 7%
+     space  staging=accent  ax=green   diff=red     @ 5/5/4%   */
+
+:root {
+  --grp-a: var(--accent);
+  --grp-b: var(--purple);
+  --grp-c: var(--teal);
+  --grp-mix-a: 8%;
+  --grp-mix-b: 8%;
+  --grp-mix-c: 8%;
+}
+
+html[data-theme="light"] {
+  --grp-mix-a: 7%;
+  --grp-mix-b: 7%;
+  --grp-mix-c: 7%;
+}
+
+html[data-theme="space"] {
+  --grp-a: var(--accent);
+  --grp-b: var(--green);
+  --grp-c: var(--red);
+  --grp-mix-a: 5%;
+  --grp-mix-b: 5%;
+  --grp-mix-c: 4%;
+}
+
+/* `thead th.th-group-*` (0,2,2) deliberately outspecifies the theme rules
+   at `html[data-theme] .th-group-*` (0,2,1), so this does not rely on load
+   order alone. The first declaration is the fallback for engines without
+   color-mix — plain opaque surface, losing only the tint. */
+
+.table-wrap thead th.th-group-staging {
+  background: var(--surface2);
+  background: color-mix(in srgb, var(--grp-a) var(--grp-mix-a), var(--surface2));
+}
+
+.table-wrap thead th.th-group-ax {
+  background: var(--surface2);
+  background: color-mix(in srgb, var(--grp-b) var(--grp-mix-b), var(--surface2));
+}
+
+.table-wrap thead th.th-group-diff {
+  background: var(--surface2);
+  background: color-mix(in srgb, var(--grp-c) var(--grp-mix-c), var(--surface2));
+}
