@@ -12,3 +12,7 @@ skills-lock.json
 .DS_Store
 Thumbs.db
 *.tmp
+
+# Screenshot originals - un-blurred, contain real PO/item data. Keep LOCAL.
+# Only the blurred images in docs/images/ are committed.
+docs/images/raw/

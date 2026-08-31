@@ -21,6 +21,13 @@ page renders.
 browser  →  { queryType, searchKeyword }  →  one n8n webhook  →  MSSQL (Staging · AX · DBC)  →  table
 ```
 
+![BotPO Checking: SQL preview, per-column filters and 31 result rows](docs/images/web-to-query.jpg)
+
+<sub>**BotPO Checking** on real data — execution IDs, PO numbers, item IDs, colour codes, seasons and
+the query history are blurred, and so is the SQL body, because it carries internal D365 schema. What
+it shows: the twelve modes down the left with a live row count each, the read-only **SQL preview** of
+the query n8n will run, the PO and Item ID filters, and Export Excel.</sub>
+
 ---
 
 ## The problem it solves
