@@ -82,12 +82,12 @@ function renderCompare(stagingRows, axRows, po) {
       </div>
       <div class="summary-card ${qtyMatch ? 'highlight-match' : 'highlight-mismatch'}">
         <div class="summary-label">Total QTY Staging</div>
-        <div class="summary-value blue">${fmt(stagingTotalQty, 0)}</div>
-        <div class="summary-sub" style="color:var(--purple)">AX: ${fmt(axTotalQty, 0)}</div>
+        <div class="summary-value blue">${fmt(stagingTotalQty, 4)}</div>
+        <div class="summary-sub" style="color:var(--purple)">AX: ${fmt(axTotalQty, 4)}</div>
       </div>
       <div class="summary-card ${qtyMatch ? 'highlight-match' : 'highlight-mismatch'}">
         <div class="summary-label">QTY Diff (AX − Staging)</div>
-        <div class="summary-value ${qtyMatch ? 'teal' : 'red'}">${diffQty >= 0 ? '+' : ''}${fmt(diffQty, 0)}</div>
+        <div class="summary-value ${qtyMatch ? 'teal' : 'red'}">${diffQty >= 0 ? '+' : ''}${fmt(diffQty, 4)}</div>
         <div class="summary-sub">${qtyMatch ? '✓ Match' : '✗ Mismatch'}</div>
       </div>
       <div class="summary-card ${amtMatch ? 'highlight-match' : 'highlight-mismatch'}">
@@ -159,10 +159,10 @@ function renderCompare(stagingRows, axRows, po) {
       ? `<td class="num${isMismatch ? ' td-mismatch' : ''}">${fmt(v, dec)}</td>`
       : `<td class="diff-missing">—</td>`;
 
-    const tdDiff = (d, ok) => {
+    const tdDiff = (d, ok, dec = 5) => {
       if (d === null) return `<td class="diff-missing">—</td>`;
       if (Math.abs(d) < 0.0001) return `<td class="diff-zero">0</td>`;
-      return `<td class="${ok ? 'diff-ok' : 'diff-bad'}">${d > 0 ? '+' : ''}${fmt(d, d % 1 === 0 ? 0 : 5)}</td>`;
+      return `<td class="${ok ? 'diff-ok' : 'diff-bad'}">${d > 0 ? '+' : ''}${fmt(d, d % 1 === 0 ? 0 : dec)}</td>`;
     };
 
     return `<tr class="${rowClass}">
@@ -170,9 +170,9 @@ function renderCompare(stagingRows, axRows, po) {
       <td>${itemId !== '—' ? itemId : '<span class="td-dim">—</span>'}</td>
       <td>${size !== '—' ? size : '<span class="td-dim">—</span>'}</td>
       <td>${color !== '—' ? color : '<span class="td-dim">—</span>'}</td>
-      ${tdNum(stgQty, 0, !qtyOk && stgQty !== null && axQty !== null)}
-      ${tdNum(axQty, 0, !qtyOk && stgQty !== null && axQty !== null)}
-      ${tdDiff(dQty, qtyOk)}
+      ${tdNum(stgQty, 4, !qtyOk && stgQty !== null && axQty !== null)}
+      ${tdNum(axQty, 4, !qtyOk && stgQty !== null && axQty !== null)}
+      ${tdDiff(dQty, qtyOk, 4)}
       ${tdNum(stgPrice, 5, !priceOk && stgPrice !== null && axPrice !== null)}
       ${tdNum(axPrice, 5, !priceOk && stgPrice !== null && axPrice !== null)}
       ${tdDiff(dPrice, priceOk)}
@@ -315,10 +315,10 @@ function applyCompareFilter() {
   });
 
   const tdNum = (v, dec = 0) => v !== null ? `<td class="num">${fmt(v, dec)}</td>` : `<td class="diff-missing">—</td>`;
-  const tdDiff = (d, ok) => {
+  const tdDiff = (d, ok, dec = 5) => {
     if (d === null) return `<td class="diff-missing">—</td>`;
     if (Math.abs(d) < 0.0001) return `<td class="diff-zero">0</td>`;
-    return `<td class="${ok ? 'diff-ok' : 'diff-bad'}">${d > 0 ? '+' : ''}${fmt(d, d % 1 === 0 ? 0 : 5)}</td>`;
+    return `<td class="${ok ? 'diff-ok' : 'diff-bad'}">${d > 0 ? '+' : ''}${fmt(d, d % 1 === 0 ? 0 : dec)}</td>`;
   };
 
   tbody.innerHTML = allLines.map(ln => {
@@ -360,7 +360,7 @@ function applyCompareFilter() {
       <td>${itemId !== '—' ? itemId : '<span class="td-dim">—</span>'}</td>
       <td>${size !== '—' ? size : '<span class="td-dim">—</span>'}</td>
       <td>${color !== '—' ? color : '<span class="td-dim">—</span>'}</td>
-      ${tdNum(stgQty, 0)}${tdNum(axQty, 0)}${tdDiff(dQty, qtyOk)}
+      ${tdNum(stgQty, 4)}${tdNum(axQty, 4)}${tdDiff(dQty, qtyOk, 4)}
       ${tdNum(stgPrice, 5)}${tdNum(axPrice, 5)}${tdDiff(dPrice, priceOk)}
       ${transferCell}${statusCell}
     </tr>`;

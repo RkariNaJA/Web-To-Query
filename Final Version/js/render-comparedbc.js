@@ -76,12 +76,12 @@ function renderCompareDBC(stagingRows, dbcLines, po) {
       </div>
       <div class="summary-card ${qtyMatch ? 'highlight-match' : 'highlight-mismatch'}">
         <div class="summary-label">Total QTY Staging</div>
-        <div class="summary-value blue">${fmt(stgTotalQty, 0)}</div>
-        <div class="summary-sub" style="color:#e879f9">DBC: ${fmt(dbcTotalQty, 0)}</div>
+        <div class="summary-value blue">${fmt(stgTotalQty, 4)}</div>
+        <div class="summary-sub" style="color:#e879f9">DBC: ${fmt(dbcTotalQty, 4)}</div>
       </div>
       <div class="summary-card ${qtyMatch ? 'highlight-match' : 'highlight-mismatch'}">
         <div class="summary-label">QTY Diff (DBC &#8722; Stg)</div>
-        <div class="summary-value ${qtyMatch ? 'teal' : 'red'}">${diffQty >= 0 ? '+' : ''}${fmt(diffQty, 0)}</div>
+        <div class="summary-value ${qtyMatch ? 'teal' : 'red'}">${diffQty >= 0 ? '+' : ''}${fmt(diffQty, 4)}</div>
         <div class="summary-sub">${qtyMatch ? '&#10003; Match' : '&#10007; Mismatch'}</div>
       </div>
       <div class="summary-card ${amtMatch ? 'highlight-match' : 'highlight-mismatch'}">
@@ -161,10 +161,10 @@ function renderCompareDBC(stagingRows, dbcLines, po) {
     const tdNum = (v, dec = 0, bad = false) => v !== null
       ? `<td class="num${bad ? ' td-mismatch' : ''}">${fmt(v, dec)}</td>`
       : `<td class="diff-missing">&#8212;</td>`;
-    const tdDiff = (delta, ok) => {
+    const tdDiff = (delta, ok, dec = 5) => {
       if (delta === null) return `<td class="diff-missing">&#8212;</td>`;
       if (Math.abs(delta) < 0.0001) return `<td class="diff-zero">0</td>`;
-      return `<td class="${ok ? 'diff-ok' : 'diff-bad'}">${delta > 0 ? '+' : ''}${fmt(delta, delta % 1 === 0 ? 0 : 5)}</td>`;
+      return `<td class="${ok ? 'diff-ok' : 'diff-bad'}">${delta > 0 ? '+' : ''}${fmt(delta, delta % 1 === 0 ? 0 : dec)}</td>`;
     };
 
     return `<tr class="${rowClass}">
@@ -173,9 +173,9 @@ function renderCompareDBC(stagingRows, dbcLines, po) {
       <td>${color  !== '—' ? color  : '<span class="td-dim">&#8212;</span>'}</td>
       <td>${size   !== '—' ? size   : '<span class="td-dim">&#8212;</span>'}</td>
       <td>${season !== '—' ? season : '<span class="td-dim">&#8212;</span>'}</td>
-      ${tdNum(stgQty,   0, !qtyOk   && stgQty   !== null && dbcQty   !== null)}
-      ${tdNum(dbcQty,   0, !qtyOk   && stgQty   !== null && dbcQty   !== null)}
-      ${tdDiff(dQ, qtyOk)}
+      ${tdNum(stgQty,   4, !qtyOk   && stgQty   !== null && dbcQty   !== null)}
+      ${tdNum(dbcQty,   4, !qtyOk   && stgQty   !== null && dbcQty   !== null)}
+      ${tdDiff(dQ, qtyOk, 4)}
       ${tdNum(stgPrice, 5, !priceOk && stgPrice !== null && dbcPrice !== null)}
       ${tdNum(dbcPrice, 5, !priceOk && stgPrice !== null && dbcPrice !== null)}
       ${tdDiff(dP, priceOk)}
@@ -305,10 +305,10 @@ function applyCompareDBC() {
   const tLabels = { 1: 'Completed', 2: 'ERROR', 0: 'Pending' };
   const tCls    = { 1: 'transfer-ok', 2: 'transfer-error', 0: 'transfer-pending' };
   const tdNum  = (v, dec = 0) => v !== null ? `<td class="num">${fmt(v, dec)}</td>` : `<td class="diff-missing">&#8212;</td>`;
-  const tdDiff = (delta, ok) => {
+  const tdDiff = (delta, ok, dec = 5) => {
     if (delta === null) return `<td class="diff-missing">&#8212;</td>`;
     if (Math.abs(delta) < 0.0001) return `<td class="diff-zero">0</td>`;
-    return `<td class="${ok ? 'diff-ok' : 'diff-bad'}">${delta > 0 ? '+' : ''}${fmt(delta, delta % 1 === 0 ? 0 : 5)}</td>`;
+    return `<td class="${ok ? 'diff-ok' : 'diff-bad'}">${delta > 0 ? '+' : ''}${fmt(delta, delta % 1 === 0 ? 0 : dec)}</td>`;
   };
 
   tbody.innerHTML = allLines.map(ln => {
@@ -358,7 +358,7 @@ function applyCompareDBC() {
       <td>${color  !== '—' ? color  : '<span class="td-dim">&#8212;</span>'}</td>
       <td>${size   !== '—' ? size   : '<span class="td-dim">&#8212;</span>'}</td>
       <td>${season !== '—' ? season : '<span class="td-dim">&#8212;</span>'}</td>
-      ${tdNum(stgQty,   0)}${tdNum(dbcQty,   0)}${tdDiff(dQ, qtyOk)}
+      ${tdNum(stgQty,   4)}${tdNum(dbcQty,   4)}${tdDiff(dQ, qtyOk, 4)}
       ${tdNum(stgPrice, 5)}${tdNum(dbcPrice, 5)}${tdDiff(dP, priceOk)}
       ${dbcStatusCell}${transferCell}${statusCell}
     </tr>`;

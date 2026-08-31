@@ -72,7 +72,7 @@ function renderResults(rows, po, serverTotalQty, serverTotalAmount, raw = {}) {
       let val = (origVal !== undefined && origVal !== null && origVal !== '') ? origVal : '—';
 
       if (val !== '—') {
-        if (k === 'PURCHQTY' || k === 'QTY') val = parseFloat(val || 0).toFixed(0);
+        if (k === 'PURCHQTY' || k === 'QTY') val = parseFloat(val || 0).toFixed(mode === 'search' || mode === 'count' ? 4 : 0);
         if (k === 'PURCHPRICE' || k === 'Unit Price' || k === 'UNIT_PRICE') val = parseFloat(val || 0).toFixed(5);
         if (k === 'LINEAMOUNT' || k === 'NET_AMOUNT') val = parseFloat(val || 0).toFixed(2);
         if (k === 'Net amount') val = parseFloat(val || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -122,7 +122,7 @@ function renderResults(rows, po, serverTotalQty, serverTotalAmount, raw = {}) {
       <div class="summary-card"><div class="summary-label">Total Lines</div><div class="summary-value blue" id="search-line-count">${rows.length}</div></div>
       <div class="summary-card"><div class="summary-label">Completed</div><div class="summary-value green" id="search-summary-completed">${okCount}</div></div>
       <div class="summary-card"><div class="summary-label">Errors</div><div class="summary-value ${errCount > 0 ? 'red' : 'green'}" id="search-summary-errors">${errCount}</div></div>
-      <div class="summary-card"><div class="summary-label">Total Qty</div><div class="summary-value" id="search-summary-qty">${parseFloat(totalQty).toLocaleString()}</div></div>
+      <div class="summary-card"><div class="summary-label">Total Qty</div><div class="summary-value" id="search-summary-qty">${fmt(totalQty, 4)}</div></div>
       <div class="summary-card"><div class="summary-label">Total Amount</div><div class="summary-value" id="search-summary-amt">${parseFloat(totalAmt).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div></div>
     </div>
     <div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;padding:10px 0 4px;">
@@ -198,7 +198,7 @@ function renderResults(rows, po, serverTotalQty, serverTotalAmount, raw = {}) {
     summaryHTML = `
       <div class="summary-row">
         <div class="summary-card"><div class="summary-label">Total Lines</div><div class="summary-value purple" id="count-line-count">${rows.length}</div></div>
-        <div class="summary-card"><div class="summary-label">Total QTY</div><div class="summary-value blue" id="count-summary-qty">${parseFloat(totalQty).toLocaleString()}</div></div>
+        <div class="summary-card"><div class="summary-label">Total QTY</div><div class="summary-value blue" id="count-summary-qty">${fmt(totalQty, 4)}</div></div>
         <div class="summary-card"><div class="summary-label">Total Net Amount</div><div class="summary-value" id="count-summary-amt">${parseFloat(totalAmt).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div></div>
       </div>
       <div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;padding:10px 0 4px;">

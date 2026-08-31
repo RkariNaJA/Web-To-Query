@@ -166,7 +166,7 @@ function applyDBCLinesFilter() {
     '<tr>' + linesKeys.map(k => {
       let v = r[k] != null && r[k] !== '' ? r[k] : '—';
       if (v !== '—') {
-        if (k === 'PURCHQTY')   v = parseFloat(v || 0).toFixed(0);
+        if (k === 'PURCHQTY')   v = parseFloat(v || 0).toFixed(4);
         if (k === 'PURCHPRICE') v = parseFloat(v || 0).toFixed(5);
         if (k === 'LINEAMOUNT') v = parseFloat(v || 0).toFixed(2);
       }
@@ -180,7 +180,7 @@ function applyDBCLinesFilter() {
   const lTotalQty = filtered.reduce((s, r) => s + (parseFloat(r.PURCHQTY || 0) || 0), 0);
   const lTotalAmt = filtered.reduce((s, r) => s + (parseFloat(r.LINEAMOUNT || 0) || 0), 0);
   const qtyEl = document.getElementById('dbc-summary-totalqty');
-  if (qtyEl) qtyEl.textContent = parseFloat(lTotalQty).toLocaleString();
+  if (qtyEl) qtyEl.textContent = fmt(lTotalQty, 4);
   const amtEl = document.getElementById('dbc-summary-totalamt');
   if (amtEl) amtEl.textContent = parseFloat(lTotalAmt).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const lMeta = document.getElementById('dbc-meta-lines-count');
@@ -210,7 +210,7 @@ function applySearchFilter() {
       let val = getVal(r, k);
       val = (val !== undefined && val !== null && val !== '') ? val : '—';
       if (val !== '—') {
-        if (k === 'PURCHQTY') val = parseFloat(val || 0).toFixed(0);
+        if (k === 'PURCHQTY') val = parseFloat(val || 0).toFixed(4);
         if (k === 'PURCHPRICE') val = parseFloat(val || 0).toFixed(5);
         if (k === 'LINEAMOUNT') val = parseFloat(val || 0).toFixed(2);
       }
@@ -238,7 +238,7 @@ function applySearchFilter() {
   const errorsEl = document.getElementById('search-summary-errors');
   if (errorsEl) { errorsEl.textContent = fErrCount; errorsEl.className = `summary-value ${fErrCount > 0 ? 'red' : 'green'}`; }
   const sqtyEl = document.getElementById('search-summary-qty');
-  if (sqtyEl) sqtyEl.textContent = parseFloat(fTotalQty).toLocaleString();
+  if (sqtyEl) sqtyEl.textContent = fmt(fTotalQty, 4);
   const samtEl = document.getElementById('search-summary-amt');
   if (samtEl) samtEl.textContent = parseFloat(fTotalAmt).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
@@ -278,7 +278,7 @@ function applyCountFilter() {
       let val = getVal(r, k);
       val = (val !== undefined && val !== null && val !== '') ? val : '—';
       if (val !== '—') {
-        if (k === 'QTY') val = parseFloat(val || 0).toFixed(0);
+        if (k === 'QTY') val = parseFloat(val || 0).toFixed(4);
         if (k === 'UNIT_PRICE') val = parseFloat(val || 0).toFixed(5);
         if (k === 'NET_AMOUNT') val = parseFloat(val || 0).toFixed(2);
       }
@@ -294,7 +294,7 @@ function applyCountFilter() {
   const fQty = filtered.reduce((s, r) => s + (parseFloat(getVal(r, 'QTY')) || 0), 0);
   const fAmt = filtered.reduce((s, r) => s + (parseFloat(getVal(r, 'NET_AMOUNT')) || 0), 0);
   const cqtyEl = document.getElementById('count-summary-qty');
-  if (cqtyEl) cqtyEl.textContent = parseFloat(fQty).toLocaleString();
+  if (cqtyEl) cqtyEl.textContent = fmt(fQty, 4);
   const camtEl = document.getElementById('count-summary-amt');
   if (camtEl) camtEl.textContent = parseFloat(fAmt).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }

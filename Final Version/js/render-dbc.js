@@ -25,7 +25,7 @@ function renderSearchDBC(raw, po) {
     <div class="summary-row">
       <div class="summary-card"><div class="summary-label">Header Rows</div><div class="summary-value" style="color:#38bdf8;" id="dbc-summary-header-count">${header.length}</div></div>
       <div class="summary-card"><div class="summary-label">Line Rows</div><div class="summary-value blue" id="dbc-summary-lines-count">${lines.length}</div></div>
-      <div class="summary-card"><div class="summary-label">Total Qty</div><div class="summary-value" id="dbc-summary-totalqty">${parseFloat(totalQty).toLocaleString()}</div></div>
+      <div class="summary-card"><div class="summary-label">Total Qty</div><div class="summary-value" id="dbc-summary-totalqty">${fmt(totalQty, 4)}</div></div>
       <div class="summary-card"><div class="summary-label">Total Amount</div><div class="summary-value" id="dbc-summary-totalamt">${parseFloat(totalAmt).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div></div>
     </div>`;
 
@@ -46,7 +46,7 @@ function renderSearchDBC(raw, po) {
     '<tr>' + linesKeys.map(k => {
       let v = r[k] != null && r[k] !== '' ? r[k] : '—';
       if (v !== '—') {
-        if (k === 'PURCHQTY') v = parseFloat(v || 0).toFixed(0);
+        if (k === 'PURCHQTY') v = parseFloat(v || 0).toFixed(4);
         if (k === 'PURCHPRICE') v = parseFloat(v || 0).toFixed(5);
         if (k === 'LINEAMOUNT') v = parseFloat(v || 0).toFixed(2);
       }
