@@ -675,7 +675,10 @@ function showCheckSummary() {
     <div style="border:1px solid #252a38;border-radius:8px;margin-bottom:20px;overflow:hidden;">
       <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#13161d;border-bottom:1px solid #252a38;cursor:pointer;user-select:none;" onclick="const b=document.getElementById('item-sum-body');const ic=document.getElementById('item-sum-ic');b.style.display=b.style.display==='none'?'block':'none';ic.textContent=b.style.display==='none'?'▶':'▼';">
         <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:#3ecf8e;letter-spacing:0.06em;">ITEM SUMMARY &nbsp;<span style="color:#6b7494;font-weight:400;">${Object.keys(itemSummaryMap).length} item${Object.keys(itemSummaryMap).length !== 1 ? 's' : ''}</span></span>
-        <span id="item-sum-ic" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6b7494;">▼</span>
+        <span style="display:flex;align-items:center;gap:10px;">
+          <button onclick="event.stopPropagation();exportItemSummary();" title="Export ITEM SUMMARY to Excel" style="padding:4px 10px;background:#1a1e28;border:1px solid #3a4258;color:#3ecf8e;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.05em;border-radius:5px;cursor:pointer;">⤓ EXPORT EXCEL</button>
+          <span id="item-sum-ic" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6b7494;">▼</span>
+        </span>
       </div>
       <div style="display:flex;align-items:center;gap:8px;padding:8px 14px;background:#13161d;border-bottom:1px solid #252a38;" onclick="event.stopPropagation()">
         <span style="${lblStyle}">Filter Item</span>
@@ -710,6 +713,7 @@ function showCheckSummary() {
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>BotPO Check Summary</title>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"><\/script>
   <style>
     *{box-sizing:border-box;margin:0;padding:0;}
     body{background:#0d0f14;color:#e2e6f0;font-family:'IBM Plex Sans',sans-serif;padding:32px;min-height:100vh;}
@@ -800,6 +804,26 @@ function showCheckSummary() {
           '<div style="display:grid;grid-template-columns:1fr 1fr;">'+itemRows+'</div>'+
         '</div>';
       }).join('');
+    }
+
+    function filteredItemData(){
+      var el=document.getElementById('f-item-sum');
+      var q=((el&&el.value)||'').toLowerCase();
+      return ITEM_DATA.filter(function(d){return !q||d.item.toLowerCase().includes(q);});
+    }
+
+    function exportItemSummary(){
+      var data=filteredItemData();
+      if(!data.length){alert('No items to export.');return;}
+      var X=window.XLSX||(window.opener&&!window.opener.closed&&window.opener.XLSX);
+      if(!X){alert('Excel library is still loading. Please try again in a moment.');return;}
+      var aoa=[['ITEM','Color','SIZE','SEASON']];
+      data.forEach(function(d){aoa.push([d.item,jod(d.colors),jod(d.sizes),jod(d.seasons)]);});
+      var ws=X.utils.aoa_to_sheet(aoa);
+      ws['!cols']=[{wch:22},{wch:40},{wch:40},{wch:24}];
+      var wb=X.utils.book_new();
+      X.utils.book_append_sheet(wb,ws,'Item Summary');
+      X.writeFile(wb,'BotPO_ItemSummary_'+new Date().toISOString().slice(0,10)+'.xlsx');
     }
 
     function renderItemSummary(filter){
