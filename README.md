@@ -68,8 +68,13 @@ not a new page.
 
 - **Per-column filters** on the wide result sets, with the summary cards recalculating live as you
   filter.
+- **Paste a whole list of POs to filter by** — the BotPO summary's PO filter takes them
+  comma-separated (spaces, semicolons and newlines work too), and the card, its PO list and its
+  export all narrow together.
 - **Excel export** of exactly what the table shows — filters and column choices included, not the
-  raw response. The BotPO **Item Summary** exports one deduplicated row per item.
+  raw response. The BotPO summary adds two of its own, each exporting only what its card's filter
+  currently matches: **Item Summary**, one deduplicated row per item, and **PO Summary**, one row per
+  item *per season*, with that season's POs, colours and sizes comma-joined into a cell each.
 - **Query history**, kept client-side, so re-running yesterday's check is one click.
 - **Three themes** — dark, light and `space` — set on `data-theme` and remembered.
 - **Full-error popup** for rows whose error text is far too long for a cell.

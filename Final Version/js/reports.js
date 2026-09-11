@@ -657,15 +657,18 @@ function showCheckSummary() {
   const poSummaryBar = `
     <div style="border:1px solid #252a38;border-radius:8px;margin-bottom:20px;overflow:hidden;">
       <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#13161d;border-bottom:1px solid #252a38;cursor:pointer;user-select:none;" onclick="const b=document.getElementById('po-sum-body');const ic=document.getElementById('po-sum-ic');b.style.display=b.style.display==='none'?'block':'none';ic.textContent=b.style.display==='none'?'▶':'▼';">
-        <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:#4f9cf9;letter-spacing:0.06em;">PO SUMMARY &nbsp;<span style="color:#6b7494;font-weight:400;">${totalPOs} PO${totalPOs !== 1 ? 's' : ''}</span></span>
-        <span id="po-sum-ic" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6b7494;">▼</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:#4f9cf9;letter-spacing:0.06em;">PO SUMMARY &nbsp;<span id="po-sum-count" style="color:#6b7494;font-weight:400;">${totalPOs} PO${totalPOs !== 1 ? 's' : ''}</span></span>
+        <span style="display:flex;align-items:center;gap:10px;">
+          <button onclick="event.stopPropagation();exportPoSummary();" title="Export PO SUMMARY to Excel" style="padding:4px 10px;background:#1a1e28;border:1px solid #3a4258;color:#4f9cf9;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.05em;border-radius:5px;cursor:pointer;">⤓ EXPORT EXCEL</button>
+          <span id="po-sum-ic" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6b7494;">▼</span>
+        </span>
       </div>
       <div style="padding:8px 14px;background:#0d0f14;border-bottom:1px solid #252a38;word-break:break-all;">
-        <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#f87171;letter-spacing:0.03em;">PO: ${allPOsStr}</span>
+        <span id="po-sum-list" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#f87171;letter-spacing:0.03em;">PO: ${allPOsStr}</span>
       </div>
       <div style="display:flex;align-items:center;gap:8px;padding:8px 14px;background:#13161d;border-bottom:1px solid #252a38;" onclick="event.stopPropagation()">
         <span style="${lblStyle}">Filter PO</span>
-        <input id="f-po-sum" oninput="renderPoSummary(this.value)" placeholder="Type PO to filter..." style="${selStyle}flex:1 1 160px;" autocomplete="off" spellcheck="false"/>
+        <input id="f-po-sum" oninput="renderPoSummary(this.value)" placeholder="Type PO to filter (comma-separated for multiple)..." style="${selStyle}flex:1 1 160px;" autocomplete="off" spellcheck="false"/>
         <button onclick="document.getElementById('f-po-sum').value='';renderPoSummary('');" style="padding:5px 10px;background:#0d0f14;border:1px solid #3a4258;color:#6b7494;font-family:'IBM Plex Mono',monospace;font-size:11px;border-radius:6px;cursor:pointer;">✕</button>
       </div>
       <div id="po-sum-body" style="max-height:320px;overflow-y:auto;background:#0d0f14;"></div>
@@ -779,10 +782,26 @@ function showCheckSummary() {
 
     function jod(arr){return arr&&arr.length?arr.join(', '):'-';}
 
+    function poTerms(filter){
+      return (filter||'').toLowerCase().split(/[\\s,;]+/).map(function(t){return t.trim();}).filter(Boolean);
+    }
+
+    function matchPoData(filter){
+      var terms=poTerms(filter);
+      if(!terms.length) return PO_DATA.slice();
+      return PO_DATA.filter(function(d){
+        var po=d.po.toLowerCase();
+        return terms.some(function(t){return po.includes(t);});
+      });
+    }
+
     function renderPoSummary(filter){
-      var q=(filter||'').toLowerCase();
-      var data=PO_DATA.filter(function(d){return !q||d.po.toLowerCase().includes(q);});
-      if(!data.length){document.getElementById('po-sum-body').innerHTML='<div style="padding:16px;text-align:center;font-family:IBM Plex Mono,monospace;font-size:11px;color:#6b7494;">No POs match.</div>';return;}
+      var data=matchPoData(filter);
+      var cnt=document.getElementById('po-sum-count');
+      if(cnt)cnt.textContent=data.length+' PO'+(data.length!==1?'s':'')+(data.length!==PO_DATA.length?' of '+PO_DATA.length:'');
+      var lst=document.getElementById('po-sum-list');
+      if(lst)lst.textContent='PO: '+(data.length?data.map(function(d){return d.po;}).join(','):'—');
+      if(!data.length){document.getElementById('po-sum-body').innerHTML='<div style="padding:16px;text-align:center;font-family:IBM Plex Mono,monospace;font-size:11px;color:#6b7494;">No POs match.</div>';applyTheme(document.getElementById('po-sum-body'));return;}
       document.getElementById('po-sum-body').innerHTML=data.map(function(d){
         var totalLines=d.items.reduce(function(s,i){return s+i.count;},0);
         var execStr=d.execs.length?d.execs.join(', '):'—';
@@ -804,6 +823,50 @@ function showCheckSummary() {
           '<div style="display:grid;grid-template-columns:1fr 1fr;">'+itemRows+'</div>'+
         '</div>';
       }).join('');
+      applyTheme(document.getElementById('po-sum-body'));
+    }
+
+    function filteredPoData(){
+      var el=document.getElementById('f-po-sum');
+      return matchPoData((el&&el.value)||'');
+    }
+
+    function exportPoSummary(){
+      var data=filteredPoData();
+      if(!data.length){alert('No POs to export.');return;}
+      var X=window.XLSX||(window.opener&&!window.opener.closed&&window.opener.XLSX);
+      if(!X){alert('Excel library is still loading. Please try again in a moment.');return;}
+      var keep={};
+      data.forEach(function(d){keep[d.po]=true;});
+      var groups={},order=[];
+      var addTo=function(arr,v){if(v&&v!=='—'&&arr.indexOf(v)<0)arr.push(v);};
+      ALL_ROWS.forEach(function(r){
+        var po=gv(r,'PURCHID')||'(unknown)';
+        if(!keep[po])return;
+        var item=gv(r,'ITEMID')||'(unknown)';
+        var se=gv(r,'INVENTSEASONID');
+        if(!se||se==='—')se='-';
+        var k=item+'||'+se;
+        var e=groups[k];
+        if(!e){e=groups[k]={item:item,season:se,pos:[],colors:[],sizes:[]};order.push(k);}
+        addTo(e.pos,po);
+        addTo(e.colors,gv(r,'INVENTCOLORID'));
+        addTo(e.sizes,gv(r,'INVENTSIZEID'));
+      });
+      order.sort(function(a,b){
+        var x=groups[a],y=groups[b];
+        return x.item.localeCompare(y.item)||x.season.localeCompare(y.season);
+      });
+      var aoa=[['ITEM','PO','Color','SIZE','SEASON']];
+      order.forEach(function(k){
+        var e=groups[k];
+        aoa.push([e.item,jod(e.pos.sort()),jod(e.colors.sort()),jod(e.sizes.sort()),e.season]);
+      });
+      var ws=X.utils.aoa_to_sheet(aoa);
+      ws['!cols']=[{wch:22},{wch:48},{wch:40},{wch:40},{wch:24}];
+      var wb=X.utils.book_new();
+      X.utils.book_append_sheet(wb,ws,'PO Summary');
+      X.writeFile(wb,'BotPO_POSummary_'+new Date().toISOString().slice(0,10)+'.xlsx');
     }
 
     function filteredItemData(){
@@ -829,7 +892,7 @@ function showCheckSummary() {
     function renderItemSummary(filter){
       var q=(filter||'').toLowerCase();
       var data=ITEM_DATA.filter(function(d){return !q||d.item.toLowerCase().includes(q);});
-      if(!data.length){document.getElementById('item-sum-body').innerHTML='<div style="padding:16px;text-align:center;font-family:IBM Plex Mono,monospace;font-size:11px;color:#6b7494;">No items match.</div>';return;}
+      if(!data.length){document.getElementById('item-sum-body').innerHTML='<div style="padding:16px;text-align:center;font-family:IBM Plex Mono,monospace;font-size:11px;color:#6b7494;">No items match.</div>';applyTheme(document.getElementById('item-sum-body'));return;}
       document.getElementById('item-sum-body').innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;background:#0d0f14;">'+
         data.map(function(d){
           return '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;padding:7px 14px;border-bottom:1px solid #1a1e28;border-right:1px solid #1a1e28;">'+
@@ -840,6 +903,7 @@ function showCheckSummary() {
           '</div>';
         }).join('')+
       '</div>';
+      applyTheme(document.getElementById('item-sum-body'));
     }
 
     function gv(r, key) {
@@ -897,6 +961,7 @@ function showCheckSummary() {
         }).join('');
 
       document.getElementById('check-tbody').innerHTML = html || '<tr><td colspan="8" style="padding:20px;text-align:center;color:#6b7494;">No results match the current filters.</td></tr>';
+      applyTheme(document.getElementById('check-tbody'));
       document.getElementById('row-count').textContent = rows.length + ' rows';
     }
 
@@ -913,14 +978,23 @@ function showCheckSummary() {
       ));
     }
 
+    const THEME=document.documentElement.getAttribute('data-theme');
+    const THEME_MAPS={light:{'#0d0f14':'#eef1f9','#13161d':'#eaedf8','#1a1e28':'#f0f2f8','#252a38':'#c6cde2','#3a4258':'#a4adc8','#e2e6f0':'#1e2d4a','#6b7494':'#546080'},space:{'#0d0f14':'#07051a','#13161d':'#0d0a24','#1a1e28':'#120f2e','#252a38':'#251d4a','#3a4258':'#3d3070','#e2e6f0':'#c8bbf0','#6b7494':'#7e6db5','#4f9cf9':'#c77dff','#f66':'#ff6b9d','#f87171':'#ff6b9d','#f87171':'#ff6b9d','#fb923c':'#ff9e64','#f0c060':'#ffe66d','#a78bfa':'#e0aaff','#3ecf8e':'#72efdd','#2dd4bf':'#72efdd','#f87171':'#ff6b9d'}};
+
+    function applyTheme(root){
+      const m=THEME_MAPS[THEME];
+      if(!m)return;
+      (root||document).querySelectorAll('[style]').forEach(function(el){
+        let st=el.getAttribute('style'),changed=false;
+        for(const d in m){if(st.includes(d)){st=st.split(d).join(m[d]);changed=true;}}
+        if(changed)el.setAttribute('style',st);
+      });
+    }
+
+    applyTheme();
     renderPoSummary('');
     renderItemSummary('');
     buildTable(ALL_ROWS);
-    (function(){
-      const t=document.documentElement.getAttribute('data-theme');
-      if(t==='light'){const m={'#0d0f14':'#eef1f9','#13161d':'#eaedf8','#1a1e28':'#f0f2f8','#252a38':'#c6cde2','#3a4258':'#a4adc8','#e2e6f0':'#1e2d4a','#6b7494':'#546080'};document.querySelectorAll('[style]').forEach(el=>{let s=el.getAttribute('style'),c=false;for(const[d,l] of Object.entries(m)){if(s.includes(d)){s=s.split(d).join(l);c=true;}}if(c)el.setAttribute('style',s);});}
-      else if(t==='space'){const m={'#0d0f14':'#07051a','#13161d':'#0d0a24','#1a1e28':'#120f2e','#252a38':'#251d4a','#3a4258':'#3d3070','#e2e6f0':'#c8bbf0','#6b7494':'#7e6db5','#4f9cf9':'#c77dff','#f66':'#ff6b9d','#f87171':'#ff6b9d','#f87171':'#ff6b9d','#fb923c':'#ff9e64','#f0c060':'#ffe66d','#a78bfa':'#e0aaff','#3ecf8e':'#72efdd','#2dd4bf':'#72efdd','#f87171':'#ff6b9d'};document.querySelectorAll('[style]').forEach(el=>{let s=el.getAttribute('style'),c=false;for(const[d,l] of Object.entries(m)){if(s.includes(d)){s=s.split(d).join(l);c=true;}}if(c)el.setAttribute('style',s);});}
-    })();
   <\/script>
 </body>
 </html>`;

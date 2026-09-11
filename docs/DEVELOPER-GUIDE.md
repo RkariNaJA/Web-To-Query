@@ -52,7 +52,7 @@ Web-To-Query/
 │  │  ├─ filters.js            per-column filtering
 │  │  ├─ export.js             export the current table to .xlsx
 │  │  ├─ history.js            past queries, kept client-side
-│  │  └─ reports.js            full-error popup
+│  │  └─ reports.js            full-error popup + the Error / Unit / BotPO summary windows
 │  ├─ css/                  12 stylesheets, one per area + three themes
 │  └─ Version 1/            an earlier snapshot of this app
 ├─ po-query-react/       React + Vite port (see caveat below)
@@ -114,6 +114,28 @@ Only three modes add extra fields:
 - **Per-column filters** on the wider result sets.
 - **Full-error popup** for rows whose error text is too long for a cell.
 
+### The summary windows (`reports.js`)
+
+Four of them — `showFullError`, `showErrorSummary`, `showUnitSummary`, `showCheckSummary` — each
+built as one big template literal and handed to a `window.open()` document. They are standalone
+pages: their own `<style>`, their own copy of the data inlined as JSON, and their own filter and
+render functions. Nothing from `js/` is in scope inside them.
+
+`showCheckSummary` (BotPO Checking → **Error Summarize**) carries two cards, each with a filter and
+an Excel export that follows that filter:
+
+| Card | Filter | Export |
+| ---- | ------ | ------ |
+| ITEM SUMMARY | substring on item | one row per item: `ITEM, Color, SIZE, SEASON` |
+| PO SUMMARY | **many POs at once** — `poTerms()` splits the box on commas, semicolons and whitespace, then a PO matches if it contains *any* term | one row per **item + season**: `ITEM, PO, Color, SIZE, SEASON`, each cell comma-joined and deduplicated |
+
+Two things about the PO Summary export are easy to get wrong:
+
+- It reads **`ALL_ROWS`, not `PO_DATA`**. `PO_DATA` rolls seasons up per PO, so a colour can no
+  longer be traced back to one season — grouping by item + season needs the raw rows.
+- The card's header count and its red `PO: …` strip are **not static**. `renderPoSummary()` rewrites
+  both, so they always show the filtered set.
+
 ---
 
 ## Configuration
@@ -143,6 +165,16 @@ carries no credentials at all.
   `Final Version` as the source of truth.
 - `js/` modules are **plain scripts, not ES modules** — they share globals and depend on the load
   order in `index.html`. Adding a file means adding a `<script>` tag.
+- ⚠️ **Backslash escapes die inside the summary popups.** Their code lives in a template literal, so
+  an escape the literal doesn't recognise silently loses its backslash: writing `/[\s,;]+/` ships
+  `/[s,;]+/` to the browser — a regex that splits on the letter *s*. Double every backslash meant for
+  the generated code (`/[\\s,;]+/`), and remember `\n` / `\t` are worse, becoming real newlines and
+  tabs that break a regex literal outright. This does **not** show up in `node --check reports.js`,
+  which only sees a string; it only shows up in a browser.
+- ⚠️ **Re-rendered popup markup has to be re-themed.** Light and `space` are applied by `applyTheme()`
+  walking `[style]` attributes and swapping the dark hex values — so any function that rewrites
+  `innerHTML` (every filter re-render) must call `applyTheme(container)` afterwards, or that section
+  snaps back to the dark palette.
 - Adding a mode touches four places: `MODES` in `core.js`, the nav item in `index.html`, the query-bar
   branch in `mode.js`, and the dispatch in `query.js` — plus a `tag-*` / `active-*` colour pair in the
   CSS.
