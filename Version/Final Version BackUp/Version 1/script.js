@@ -23,7 +23,10 @@ let lastListRows = [];
 let lastCheckRows = [];
 let lastCountRows = [];
 let lastSearchRows = [];
+let lastPackrollRows = [];
 let lastCompareData = { stagingRows: [], axRows: [] };
+let lastSearchDBCData = { header: [], lines: [] };
+let lastCompareDBC = { stagingRows: [], dbcLines: [] };
 let cfg = {
   webhook: localStorage.getItem('po_webhook') || '',
   auth: localStorage.getItem('po_auth') || ''
@@ -35,9 +38,11 @@ const MODES = {
   count: { label: 'PO LINE (AX)', tagClass: 'tag-count', navClass: 'active-count' },
   update: { label: 'PACK / ROLL', tagClass: 'tag-update', navClass: 'active-update' },
   packroll: { label: 'QTY PACK/ROLL', tagClass: 'tag-packroll', navClass: 'active-packroll' },
-  compare: { label: 'COMPARE PO', tagClass: 'tag-compare', navClass: 'active-compare' },
+  compare: { label: 'COMPARE STG vs PO AX', tagClass: 'tag-compare', navClass: 'active-compare' },
   check: { label: 'BOTPO CHECKING', tagClass: 'tag-check', navClass: 'active-check' },
-  updatestaging: { label: 'UPDATE STAGING STATUS', tagClass: 'tag-updatestaging', navClass: 'active-updatestaging' }
+  updatestaging: { label: 'UPDATE STAGING STATUS', tagClass: 'tag-updatestaging', navClass: 'active-updatestaging' },
+  searchdbc: { label: 'SEARCH PO DBC', tagClass: 'tag-searchdbc', navClass: 'active-searchdbc' },
+  comparedbc: { label: 'COMPARE STG vs PO DBC', tagClass: 'tag-comparedbc', navClass: 'active-comparedbc' }
 };
 
 // ── Init ───────────────────────────────────────────────────────────
@@ -132,8 +137,20 @@ ${kw('SET')} TRANSFERSTATUS ${kw('=')} ${vl('1')}
 ${kw('WHERE')} PURCHID ${kw('=')} ${vl("'" + po + "'")}
   ${kw('AND')} EXECUTIONID ${kw('=')} ${vl("'" + execId + "'")}
   ${kw('AND')} TRANSFERSTATUS ${kw('=')} ${vl('2')};`;
-  } else {
-    // compare: two queries shown
+  } else if (mode === 'searchdbc') {
+    el.innerHTML = `<span style="color:#38bdf8">── QUERY 1 (DBC Header)</span>
+${kw('SELECT')} CREATEDATETIME, EXPORTDATETIME, STATUS, VENDORAXACCOUNT,
+       COMPANY, PURCHID, ORDERACCOUNT, INVOICEACCOUNT, CURRENCYCODE
+${kw('FROM')} PO_HEADER_DBC
+${kw('WHERE')} PURCHID ${kw('=')} ${vl("'" + po + "'")}
+
+<span style="color:#38bdf8">── QUERY 2 (DBC Lines)</span>
+${kw('SELECT')} LINENUMBER, CREATEDATETIME, EXPORTDATETIME, STATUS,
+       PURCHQTY, PURCHPRICE, LINEAMOUNT, JOBNUMBER, INVENTSTATUS,
+       SEASON, COLORID, COLORNAME, SIZEIDFABRIC, SIZEID, COMPANY, SITEID, LOCATIONID
+${kw('FROM')} PO_LINES_DBC
+${kw('WHERE')} PURCHID ${kw('=')} ${vl("'" + po + "'")};`;
+  } else if (mode === 'compare') {
     el.innerHTML = `<span style="color:var(--accent)">── QUERY 1 (Staging)</span>
 ${kw('SELECT')} LINENUMBER, ITEMID, INVENTSIZEID, INVENTCOLORID, PURCHQTY, PURCHPRICE, LINEAMOUNT, TRANSFERSTATUS
 ${kw('FROM')} DMFPURCHLINEENTITY ${kw('WHERE')} PURCHID ${kw('=')} ${vl("'" + po + "'")} <span style="color:var(--text-dim)">…MAX EXECUTIONID…</span>
@@ -141,6 +158,15 @@ ${kw('FROM')} DMFPURCHLINEENTITY ${kw('WHERE')} PURCHID ${kw('=')} ${vl("'" + po
 <span style="color:var(--purple)">── QUERY 2 (PO Line AX)</span>
 ${kw('SELECT')} LINENUMBER, ITEMID, IVZ_COLOR_CT, IVZ_SIZE_CT, PURCHQTY, PURCHPRICE, LINEAMOUNT
 ${kw('FROM')} PURCHLINE ${kw('WHERE')} PURCHID ${kw('=')} ${vl("'" + po + "'")};`;
+  } else if (mode === 'comparedbc') {
+    el.innerHTML = `<span style="color:var(--accent)">── QUERY 1 (Staging)</span>
+${kw('SELECT')} LINENUMBER, INVENTSIZEID, INVENTCOLORID, INVENTSTYLEID, PURCHQTY, PURCHPRICE, LINEAMOUNT, TRANSFERSTATUS
+${kw('FROM')} DMFPURCHLINEENTITY ${kw('WHERE')} PURCHID ${kw('=')} ${vl("'" + po + "'")} <span style="color:var(--text-dim)">…MAX EXECUTIONID…</span>
+
+<span style="color:#e879f9">── QUERY 2 (DBC Lines — MAX CREATEDATETIME per line)</span>
+${kw('SELECT')} LINENUMBER, SIZEID, COLORID, SEASON, PURCHQTY, PURCHPRICE, LINEAMOUNT, STATUS, CREATEDATETIME
+${kw('FROM')} PO_LINES_DBC ${kw('WHERE')} PURCHID ${kw('=')} ${vl("'" + po + "'")}
+<span style="color:var(--text-dim)">  [client deduplicates: MAX(CREATEDATETIME) per LINENUMBER]</span>;`;
   }
 }
 
@@ -214,6 +240,19 @@ async function runQuery() {
       ]);
       addHistory(po, mode, stagingRes.rows.length + axRes.rows.length);
       renderCompare(stagingRes.rows, axRes.rows, po);
+    } else if (mode === 'searchdbc') {
+      const { raw } = await fetchQuery('searchdbc', po);
+      const totalRows = (raw.totalHeaderRows || 0) + (raw.totalLineRows || 0);
+      addHistory(po, mode, totalRows);
+      renderSearchDBC(raw, po);
+    } else if (mode === 'comparedbc') {
+      const [stagingRes, dbcRes] = await Promise.all([
+        fetchQuery('search', po),
+        fetchQuery('searchdbc', po)
+      ]);
+      const dbcLines = Array.isArray(dbcRes.raw.lines) ? dbcRes.raw.lines : [];
+      addHistory(po, mode, stagingRes.rows.length + dbcLines.length);
+      renderCompareDBC(stagingRes.rows, dbcLines, po);
     } else {
       const execId = mode === 'updatestaging' ? document.getElementById('exec-input').value.trim() : null;
       const { rows, raw } = await fetchQuery(mode, po, execId);
@@ -231,6 +270,480 @@ async function runQuery() {
   } finally {
     btn.disabled = false;
   }
+}
+
+// ── Search PO DBC ──────────────────────────────────────────────────
+function renderSearchDBC(raw, po) {
+  const area = document.getElementById('results-area');
+  lastSearchDBCData = raw;
+
+  const header = Array.isArray(raw.header) ? raw.header : [];
+  const lines  = Array.isArray(raw.lines)  ? raw.lines  : [];
+
+  if (header.length === 0 && lines.length === 0) {
+    area.innerHTML = `
+      <div class="state-box" style="border-style:solid;border-color:var(--border);">
+        <div class="state-icon">&#8856;</div>
+        <span style="color:var(--text);">No DBC data found for PO <strong>${po}</strong>.</span>
+      </div>`;
+    updateBadge('searchdbc', 0);
+    return;
+  }
+
+  updateBadge('searchdbc', header.length + lines.length);
+
+  const totalQty = lines.reduce((s, r) => s + (parseFloat(r.PURCHQTY  || 0) || 0), 0);
+  const totalAmt = lines.reduce((s, r) => s + (parseFloat(r.LINEAMOUNT || 0) || 0), 0);
+
+  const summaryHTML = `
+    <div class="summary-row">
+      <div class="summary-card"><div class="summary-label">Header Rows</div><div class="summary-value" style="color:#38bdf8;">${header.length}</div></div>
+      <div class="summary-card"><div class="summary-label">Line Rows</div><div class="summary-value blue">${lines.length}</div></div>
+      <div class="summary-card"><div class="summary-label">Total Qty</div><div class="summary-value">${parseFloat(totalQty).toLocaleString()}</div></div>
+      <div class="summary-card"><div class="summary-label">Total Amount</div><div class="summary-value">${parseFloat(totalAmt).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div></div>
+    </div>`;
+
+  const headerCols = ['CREATED', 'EXPORTED', 'STATUS', 'VENDOR AX', 'COMPANY', 'PURCHID', 'ORDER ACCT', 'INVOICE ACCT', 'CURRENCY'];
+  const headerKeys = ['CREATEDATETIME', 'EXPORTDATETIME', 'STATUS', 'VENDORAXACCOUNT', 'COMPANY', 'PURCHID', 'ORDERACCOUNT', 'INVOICEACCOUNT', 'CURRENCYCODE'];
+
+  const headerRowsHTML = header.map(r =>
+    '<tr>' + headerKeys.map(k => {
+      const v = r[k] != null && r[k] !== '' ? r[k] : '—';
+      return v === '—' ? `<td class="td-dim">—</td>` : `<td>${v}</td>`;
+    }).join('') + '</tr>'
+  ).join('');
+
+  const linesCols = ['LINE', 'CREATED', 'EXPORTED', 'STATUS', 'QTY', 'PRICE', 'AMOUNT', 'JOB NO', 'INVENT STATUS', 'SEASON', 'COLOR ID', 'COLOR NAME', 'SIZE FABRIC', 'SIZE ID', 'COMPANY', 'SITE', 'LOCATION'];
+  const linesKeys = ['LINENUMBER', 'CREATEDATETIME', 'EXPORTDATETIME', 'STATUS', 'PURCHQTY', 'PURCHPRICE', 'LINEAMOUNT', 'JOBNUMBER', 'INVENTSTATUS', 'SEASON', 'COLORID', 'COLORNAME', 'SIZEIDFABRIC', 'SIZEID', 'COMPANY', 'SITEID', 'LOCATIONID'];
+
+  const linesRowsHTML = lines.map(r =>
+    '<tr>' + linesKeys.map(k => {
+      let v = r[k] != null && r[k] !== '' ? r[k] : '—';
+      if (v !== '—') {
+        if (k === 'PURCHQTY')   v = parseFloat(v || 0).toFixed(0);
+        if (k === 'PURCHPRICE') v = parseFloat(v || 0).toFixed(5);
+        if (k === 'LINEAMOUNT') v = parseFloat(v || 0).toFixed(2);
+      }
+      if (k === 'LINENUMBER') return `<td class="num">${v}</td>`;
+      return v === '—' ? `<td class="td-dim">—</td>` : `<td>${v}</td>`;
+    }).join('') + '</tr>'
+  ).join('');
+
+  area.innerHTML = `
+    ${summaryHTML}
+    <div class="results-meta">
+      <span class="results-count">PO <strong>${po}</strong> —
+        <span style="color:#38bdf8">${header.length} Header</span> ·
+        <span style="color:var(--accent)">${lines.length} Lines</span>
+      </span>
+      <span class="tag tag-searchdbc">SEARCH PO DBC</span>
+      <button onclick="exportDBCToExcel()" style="margin-left:auto;padding:5px 14px;background:var(--surface2);border:1px solid var(--green);color:var(--green);font-family:var(--mono);font-size:11px;border-radius:6px;cursor:pointer;letter-spacing:0.05em;font-weight:600;transition:all 0.15s;" onmouseover="this.style.background='var(--green-glow)'" onmouseout="this.style.background='var(--surface2)'">&#11015; Export Excel</button>
+    </div>
+    <div style="padding:0 28px 8px;font-family:var(--mono);font-size:10px;color:#38bdf8;letter-spacing:0.1em;text-transform:uppercase;">&#9472;&#9472; Header</div>
+    <div class="table-wrap" style="max-height:200px;flex:none;">
+      <table>
+        <thead><tr>${headerCols.map(c => `<th>${c}</th>`).join('')}</tr></thead>
+        <tbody>${headerRowsHTML}</tbody>
+      </table>
+    </div>
+    <div style="padding:10px 28px 8px;font-family:var(--mono);font-size:10px;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;">&#9472;&#9472; Lines</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>${linesCols.map(c => `<th>${c}</th>`).join('')}</tr></thead>
+        <tbody id="searchdbc-lines-tbody">${linesRowsHTML}</tbody>
+      </table>
+    </div>`;
+}
+
+function exportDBCToExcel() {
+  const { header = [], lines = [] } = lastSearchDBCData;
+  if (!header.length && !lines.length) return;
+
+  const wb   = XLSX.utils.book_new();
+  const po   = document.getElementById('po-input').value.trim();
+  const name = `PO_SearchDBC_${new Date().toISOString().slice(0, 10)}.xlsx`;
+
+  const headerKeys = ['CREATEDATETIME', 'EXPORTDATETIME', 'STATUS', 'VENDORAXACCOUNT', 'COMPANY', 'PURCHID', 'ORDERACCOUNT', 'INVOICEACCOUNT', 'CURRENCYCODE'];
+  const headerCols = ['CREATED', 'EXPORTED', 'STATUS', 'VENDOR AX', 'COMPANY', 'PURCHID', 'ORDER ACCT', 'INVOICE ACCT', 'CURRENCY'];
+  if (header.length) {
+    const ws = XLSX.utils.aoa_to_sheet([headerCols, ...header.map(r => headerKeys.map(k => r[k] ?? ''))]);
+    XLSX.utils.book_append_sheet(wb, ws, 'Header');
+  }
+
+  const linesKeys = ['LINENUMBER', 'CREATEDATETIME', 'EXPORTDATETIME', 'STATUS', 'PURCHQTY', 'PURCHPRICE', 'LINEAMOUNT', 'JOBNUMBER', 'INVENTSTATUS', 'SEASON', 'COLORID', 'COLORNAME', 'SIZEIDFABRIC', 'SIZEID', 'COMPANY', 'SITEID', 'LOCATIONID'];
+  const linesCols = ['LINE', 'CREATED', 'EXPORTED', 'STATUS', 'QTY', 'PRICE', 'AMOUNT', 'JOB NO', 'INVENT STATUS', 'SEASON', 'COLOR ID', 'COLOR NAME', 'SIZE FABRIC', 'SIZE ID', 'COMPANY', 'SITE', 'LOCATION'];
+  if (lines.length) {
+    const ws = XLSX.utils.aoa_to_sheet([linesCols, ...lines.map(r => linesKeys.map(k => r[k] ?? ''))]);
+    XLSX.utils.book_append_sheet(wb, ws, 'Lines');
+  }
+
+  XLSX.writeFile(wb, name);
+}
+
+// ── Compare PO Stg vs DBC ──────────────────────────────────────────
+function renderCompareDBC(stagingRows, dbcLines, po) {
+  const area = document.getElementById('results-area');
+
+  // Keep only the row with MAX CREATEDATETIME per LINENUMBER
+  const dbcLatestMap = {};
+  dbcLines.forEach(r => {
+    const ln = r.LINENUMBER;
+    if (!dbcLatestMap[ln] || String(r.CREATEDATETIME) > String(dbcLatestMap[ln].CREATEDATETIME)) {
+      dbcLatestMap[ln] = r;
+    }
+  });
+  const dbcLinesDeduped = Object.values(dbcLatestMap);
+
+  lastCompareDBC = { stagingRows, dbcLines: dbcLinesDeduped };
+  updateBadge('comparedbc', stagingRows.length + dbcLinesDeduped.length);
+
+  // Staging accessors
+  const sLine  = r => parseFloat(getVal(r, 'LINENUMBER'))   || 0;
+  const sQty   = r => parseFloat(getVal(r, 'PURCHQTY'))     || 0;
+  const sPrice = r => parseFloat(getVal(r, 'PURCHPRICE'))   || 0;
+  const sAmt   = r => parseFloat(getVal(r, 'LINEAMOUNT'))   || 0;
+  const sSize  = r => getVal(r, 'INVENTSIZEID')   ?? '—';
+  const sColor = r => getVal(r, 'INVENTCOLORID')  ?? '—';
+  const sSeason= r => getVal(r, 'INVENTSTYLEID')  ?? '—';
+  const sXfer  = r => parseInt(getVal(r, 'TRANSFERSTATUS'));
+
+  // DBC accessors
+  const dLine  = r => parseFloat(r.LINENUMBER)  || 0;
+  const dQty   = r => parseFloat(r.PURCHQTY)    || 0;
+  const dPrice = r => parseFloat(r.PURCHPRICE)  || 0;
+  const dAmt   = r => parseFloat(r.LINEAMOUNT)  || 0;
+  const dSize  = r => r.SIZEID     ?? '—';
+  const dColor = r => r.COLORID    ?? '—';
+  const dSeason= r => r.SEASON     ?? '—';
+  const dStatus= r => r.STATUS     ?? '—';
+
+  // Build keyed maps
+  const stagingMap = {};
+  stagingRows.forEach(r => { stagingMap[sLine(r)] = r; });
+  const dbcMap = {};
+  dbcLinesDeduped.forEach(r => { dbcMap[dLine(r)] = r; });
+
+  const allLines = [...new Set([
+    ...stagingRows.map(r => sLine(r)),
+    ...dbcLinesDeduped.map(r => dLine(r))
+  ])].sort((a, b) => a - b);
+
+  // Totals
+  const stgTotalQty = stagingRows.reduce((s, r) => s + sQty(r), 0);
+  const stgTotalAmt = stagingRows.reduce((s, r) => s + sAmt(r), 0);
+  const dbcTotalQty = dbcLinesDeduped.reduce((s, r) => s + dQty(r), 0);
+  const dbcTotalAmt = dbcLinesDeduped.reduce((s, r) => s + dAmt(r), 0);
+  const diffQty = dbcTotalQty - stgTotalQty;
+  const diffAmt = dbcTotalAmt - stgTotalAmt;
+  const qtyMatch = Math.abs(diffQty) < 0.01;
+  const amtMatch = Math.abs(diffAmt) < 0.01;
+  const lineMatch = stagingRows.length === dbcLinesDeduped.length;
+
+  let mismatchLines = 0, onlyStg = 0, onlyDbc = 0;
+  allLines.forEach(ln => {
+    const s = stagingMap[ln], d = dbcMap[ln];
+    if (!s) onlyDbc++;
+    else if (!d) onlyStg++;
+    else if (Math.abs(dQty(d) - sQty(s)) > 0.01 || Math.abs(dPrice(d) - sPrice(s)) > 0.0001) mismatchLines++;
+  });
+  const issueCount = mismatchLines + onlyStg + onlyDbc;
+  const allMatch = qtyMatch && amtMatch && lineMatch;
+
+  const summaryHTML = `
+    <div class="summary-row">
+      <div class="summary-card ${lineMatch ? 'highlight-match' : 'highlight-mismatch'}">
+        <div class="summary-label">Lines Stg / DBC</div>
+        <div class="summary-value ${lineMatch ? 'green' : 'red'}">${stagingRows.length} / ${dbcLinesDeduped.length}</div>
+        <div class="summary-sub">${lineMatch ? '&#10003; Match' : '&#10007; Mismatch'}</div>
+      </div>
+      <div class="summary-card ${qtyMatch ? 'highlight-match' : 'highlight-mismatch'}">
+        <div class="summary-label">Total QTY Staging</div>
+        <div class="summary-value blue">${fmt(stgTotalQty, 0)}</div>
+        <div class="summary-sub" style="color:#e879f9">DBC: ${fmt(dbcTotalQty, 0)}</div>
+      </div>
+      <div class="summary-card ${qtyMatch ? 'highlight-match' : 'highlight-mismatch'}">
+        <div class="summary-label">QTY Diff (DBC &#8722; Stg)</div>
+        <div class="summary-value ${qtyMatch ? 'teal' : 'red'}">${diffQty >= 0 ? '+' : ''}${fmt(diffQty, 0)}</div>
+        <div class="summary-sub">${qtyMatch ? '&#10003; Match' : '&#10007; Mismatch'}</div>
+      </div>
+      <div class="summary-card ${amtMatch ? 'highlight-match' : 'highlight-mismatch'}">
+        <div class="summary-label">Total Amount Staging</div>
+        <div class="summary-value blue">${fmt(stgTotalAmt, 2)}</div>
+        <div class="summary-sub" style="color:#e879f9">DBC: ${fmt(dbcTotalAmt, 2)}</div>
+      </div>
+      <div class="summary-card ${amtMatch ? 'highlight-match' : 'highlight-mismatch'}">
+        <div class="summary-label">Amount Diff (DBC &#8722; Stg)</div>
+        <div class="summary-value ${amtMatch ? 'teal' : 'red'}">${diffAmt >= 0 ? '+' : ''}${fmt(diffAmt, 2)}</div>
+        <div class="summary-sub">${amtMatch ? '&#10003; Match' : '&#10007; Mismatch'}</div>
+      </div>
+      <div class="summary-card ${issueCount === 0 ? 'highlight-match' : 'highlight-mismatch'}">
+        <div class="summary-label">Line Issues</div>
+        <div class="summary-value ${issueCount === 0 ? 'green' : 'red'}">${issueCount}</div>
+        <div class="summary-sub">${mismatchLines} qty/amt &#183; ${onlyStg} stg-only &#183; ${onlyDbc} dbc-only</div>
+      </div>
+    </div>`;
+
+  const cols = ['LINE', 'ITEM ID', 'COLOR', 'SIZE', 'SEASON',
+    'STG QTY', 'DBC QTY', '&#916; QTY',
+    'STG PRICE', 'DBC PRICE', '&#916; PRICE',
+    'DBC STATUS', 'STG TRANSFER', 'STATUS'];
+
+  const rows_html = allLines.map(ln => {
+    const s = stagingMap[ln], d = dbcMap[ln];
+    let rowClass = 'row-match';
+    if (!s) rowClass = 'row-only-ax';
+    else if (!d) rowClass = 'row-only-staging';
+    else {
+      const qd = Math.abs(dQty(d) - sQty(s));
+      const pd = Math.abs(dPrice(d) - sPrice(s));
+      if (qd > 0.01 || pd > 0.0001) rowClass = 'row-mismatch';
+    }
+
+    const itemId = s ? (getVal(s, 'ITEMID') ?? '—') : '—';
+    const color  = s ? sColor(s)  : (d ? dColor(d)  : '—');
+    const size   = s ? sSize(s)   : (d ? dSize(d)   : '—');
+    const season = s ? sSeason(s) : (d ? dSeason(d) : '—');
+
+    const stgQty   = s ? sQty(s)   : null;
+    const dbcQty   = d ? dQty(d)   : null;
+    const stgPrice = s ? sPrice(s) : null;
+    const dbcPrice = d ? dPrice(d) : null;
+
+    const dQ = (stgQty !== null && dbcQty !== null)     ? (dbcQty   - stgQty)   : null;
+    const dP = (stgPrice !== null && dbcPrice !== null)  ? (dbcPrice - stgPrice) : null;
+    const qtyOk   = dQ !== null && Math.abs(dQ) < 0.01;
+    const priceOk = dP !== null && Math.abs(dP) < 0.0001;
+
+    const tLabels = { 1: 'Completed', 2: 'ERROR', 0: 'Pending' };
+    const tCls    = { 1: 'transfer-ok', 2: 'transfer-error', 0: 'transfer-pending' };
+
+    const dbcStat = d ? parseInt(dStatus(d)) : null;
+    const isImported = dbcStat === 9;
+
+    const dbcStatusCell = d
+      ? `<td><span style="font-family:var(--mono);font-size:11px;padding:2px 7px;border-radius:4px;background:${isImported ? 'rgba(62,207,142,0.12)' : 'rgba(251,146,60,0.12)'};color:${isImported ? 'var(--green)' : 'var(--orange)'};">${dbcStat}</span></td>`
+      : `<td class="td-dim">&#8212;</td>`;
+
+    let transferCell;
+    if (!s) {
+      transferCell = `<td class="td-dim">&#8212;</td>`;
+    } else if (!isImported) {
+      transferCell = `<td><span class="transfer-badge transfer-pending">&#8856; Not Imported</span></td>`;
+    } else {
+      const tv = sXfer(s);
+      transferCell = `<td><span class="transfer-badge ${tCls[tv] || 'transfer-pending'}">&#9679; ${tLabels[tv] || '?'}</span></td>`;
+    }
+
+    let statusCell;
+    if (!s) statusCell = `<td><span class="match-badge match-ax">DBC Only</span></td>`;
+    else if (!d) statusCell = `<td><span class="match-badge match-staging">Stg Only</span></td>`;
+    else if (!qtyOk || !priceOk) statusCell = `<td><span class="match-badge match-bad">&#10007; Mismatch</span></td>`;
+    else statusCell = `<td><span class="match-badge match-ok">&#10003; Match</span></td>`;
+
+    const tdNum = (v, dec = 0, bad = false) => v !== null
+      ? `<td class="num${bad ? ' td-mismatch' : ''}">${fmt(v, dec)}</td>`
+      : `<td class="diff-missing">&#8212;</td>`;
+    const tdDiff = (delta, ok) => {
+      if (delta === null) return `<td class="diff-missing">&#8212;</td>`;
+      if (Math.abs(delta) < 0.0001) return `<td class="diff-zero">0</td>`;
+      return `<td class="${ok ? 'diff-ok' : 'diff-bad'}">${delta > 0 ? '+' : ''}${fmt(delta, delta % 1 === 0 ? 0 : 5)}</td>`;
+    };
+
+    return `<tr class="${rowClass}">
+      <td class="num">${ln}</td>
+      <td>${itemId !== '—' ? itemId : '<span class="td-dim">&#8212;</span>'}</td>
+      <td>${color  !== '—' ? color  : '<span class="td-dim">&#8212;</span>'}</td>
+      <td>${size   !== '—' ? size   : '<span class="td-dim">&#8212;</span>'}</td>
+      <td>${season !== '—' ? season : '<span class="td-dim">&#8212;</span>'}</td>
+      ${tdNum(stgQty,   0, !qtyOk   && stgQty   !== null && dbcQty   !== null)}
+      ${tdNum(dbcQty,   0, !qtyOk   && stgQty   !== null && dbcQty   !== null)}
+      ${tdDiff(dQ, qtyOk)}
+      ${tdNum(stgPrice, 5, !priceOk && stgPrice !== null && dbcPrice !== null)}
+      ${tdNum(dbcPrice, 5, !priceOk && stgPrice !== null && dbcPrice !== null)}
+      ${tdDiff(dP, priceOk)}
+      ${dbcStatusCell}
+      ${transferCell}
+      ${statusCell}
+    </tr>`;
+  }).join('');
+
+  const groupHeaderHTML = `<tr>
+    <th colspan="5" class="th-group-base" style="border-right:1px solid var(--border-accent);">LINE INFO</th>
+    <th colspan="3" class="th-group-staging" style="border-right:1px solid rgba(79,156,249,0.2);">QTY</th>
+    <th colspan="3" class="th-group-ax" style="border-right:1px solid rgba(232,121,249,0.2);">PRICE</th>
+    <th colspan="3" class="th-group-diff">STATUS</th>
+  </tr>`;
+
+  const uniqOpts = (sField, dField) => {
+    const vals = new Set();
+    stagingRows.forEach(r => { const v = getVal(r, sField); if (v && v !== '—') vals.add(String(v)); });
+    dbcLinesDeduped.forEach(r => { const v = r[dField]; if (v && v !== '—') vals.add(String(v)); });
+    return [...vals].sort();
+  };
+  const mkSel = (id, label, opts) => `
+    <div style="display:flex;flex-direction:column;gap:4px;">
+      <div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);letter-spacing:0.06em;text-transform:uppercase;">${label}</div>
+      <select id="${id}" onchange="applyCompareDBC()"
+        style="background:var(--surface2);border:1px solid var(--border);color:var(--text-primary);font-family:var(--mono);font-size:11px;padding:5px 8px;border-radius:6px;cursor:pointer;min-width:110px;">
+        <option value="">All</option>
+        ${opts.map(v => `<option value="${v}">${v}</option>`).join('')}
+      </select>
+    </div>`;
+
+  area.innerHTML = `
+    ${summaryHTML}
+    <div class="results-meta">
+      <span class="results-count">
+        Comparing PO <strong>${po}</strong> &#8212;
+        <span style="color:var(--accent)" id="comparedbc-stg-count">${stagingRows.length} Staging</span> vs
+        <span style="color:#e879f9">${dbcLinesDeduped.length} DBC Lines</span>
+      </span>
+      <span class="tag tag-comparedbc">COMPARE STG vs DBC</span>
+      ${allMatch ? '<span class="tag tag-ok">&#10003; FULL MATCH</span>' : `<span class="tag tag-list">&#10007; ${issueCount} ISSUE${issueCount !== 1 ? 'S' : ''}</span>`}
+      <button onclick="exportToExcel()" style="margin-left:auto;padding:5px 14px;background:var(--surface2);border:1px solid var(--green);color:var(--green);font-family:var(--mono);font-size:11px;border-radius:6px;cursor:pointer;letter-spacing:0.05em;font-weight:600;transition:all 0.15s;" onmouseover="this.style.background='var(--green-glow)'" onmouseout="this.style.background='var(--surface2)'">&#11015; Export Excel</button>
+    </div>
+    <div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;padding:10px 28px 4px;">
+      ${mkSel('cdbc-filter-color',  'Color',  uniqOpts('INVENTCOLORID', 'COLORID'))}
+      ${mkSel('cdbc-filter-size',   'Size',   uniqOpts('INVENTSIZEID',  'SIZEID'))}
+      ${mkSel('cdbc-filter-season', 'Season', uniqOpts('INVENTSTYLEID', 'SEASON'))}
+      ${mkSel('cdbc-filter-status', 'Status', ['Match', 'Mismatch', 'DBC Only', 'Stg Only'])}
+      <button onclick="['cdbc-filter-color','cdbc-filter-size','cdbc-filter-season','cdbc-filter-status'].forEach(id=>document.getElementById(id).value='');applyCompareDBC();"
+        style="align-self:flex-end;padding:5px 12px;background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);font-family:var(--mono);font-size:11px;border-radius:6px;cursor:pointer;">&#10005; Clear</button>
+      <span id="comparedbc-line-count" style="align-self:flex-end;font-family:var(--mono);font-size:11px;color:var(--text-dim);">${allLines.length} lines</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          ${groupHeaderHTML}
+          <tr>${cols.map(c => `<th>${c}</th>`).join('')}</tr>
+        </thead>
+        <tbody id="comparedbc-tbody">${rows_html}</tbody>
+      </table>
+    </div>`;
+}
+
+function applyCompareDBC() {
+  const tbody = document.getElementById('comparedbc-tbody');
+  if (!tbody) return;
+
+  const { stagingRows, dbcLines } = lastCompareDBC;
+  const fColor  = document.getElementById('cdbc-filter-color')?.value  || '';
+  const fSize   = document.getElementById('cdbc-filter-size')?.value   || '';
+  const fSeason = document.getElementById('cdbc-filter-season')?.value || '';
+  const fStatus = document.getElementById('cdbc-filter-status')?.value || '';
+
+  const sLine  = r => parseFloat(getVal(r, 'LINENUMBER')) || 0;
+  const sQty   = r => parseFloat(getVal(r, 'PURCHQTY'))   || 0;
+  const sPrice = r => parseFloat(getVal(r, 'PURCHPRICE')) || 0;
+  const sSize  = r => getVal(r, 'INVENTSIZEID')  ?? '—';
+  const sColor = r => getVal(r, 'INVENTCOLORID') ?? '—';
+  const sSeason= r => getVal(r, 'INVENTSTYLEID') ?? '—';
+  const sXfer  = r => parseInt(getVal(r, 'TRANSFERSTATUS'));
+
+  const dLine  = r => parseFloat(r.LINENUMBER) || 0;
+  const dQty   = r => parseFloat(r.PURCHQTY)   || 0;
+  const dPrice = r => parseFloat(r.PURCHPRICE) || 0;
+  const dSize  = r => r.SIZEID  ?? '—';
+  const dColor = r => r.COLORID ?? '—';
+  const dSeason= r => r.SEASON  ?? '—';
+  const dStatus= r => r.STATUS  ?? '—';
+
+  const stagingMap = {};
+  stagingRows.forEach(r => { stagingMap[sLine(r)] = r; });
+  const dbcMap = {};
+  dbcLines.forEach(r => { dbcMap[dLine(r)] = r; });
+
+  let allLines = [...new Set([
+    ...stagingRows.map(r => sLine(r)),
+    ...dbcLines.map(r => dLine(r))
+  ])].sort((a, b) => a - b);
+
+  allLines = allLines.filter(ln => {
+    const s = stagingMap[ln], d = dbcMap[ln];
+    const color  = s ? sColor(s)  : (d ? dColor(d)  : '—');
+    const size   = s ? sSize(s)   : (d ? dSize(d)   : '—');
+    const season = s ? sSeason(s) : (d ? dSeason(d) : '—');
+    if (fColor  && color  !== fColor)  return false;
+    if (fSize   && size   !== fSize)   return false;
+    if (fSeason && season !== fSeason) return false;
+    if (fStatus) {
+      let rowStatus;
+      if (!s) rowStatus = 'DBC Only';
+      else if (!d) rowStatus = 'Stg Only';
+      else {
+        const qd = Math.abs(dQty(d) - sQty(s));
+        const pd = Math.abs(dPrice(d) - sPrice(s));
+        rowStatus = (qd > 0.01 || pd > 0.0001) ? 'Mismatch' : 'Match';
+      }
+      if (rowStatus !== fStatus) return false;
+    }
+    return true;
+  });
+
+  const tLabels = { 1: 'Completed', 2: 'ERROR', 0: 'Pending' };
+  const tCls    = { 1: 'transfer-ok', 2: 'transfer-error', 0: 'transfer-pending' };
+  const tdNum  = (v, dec = 0) => v !== null ? `<td class="num">${fmt(v, dec)}</td>` : `<td class="diff-missing">&#8212;</td>`;
+  const tdDiff = (delta, ok) => {
+    if (delta === null) return `<td class="diff-missing">&#8212;</td>`;
+    if (Math.abs(delta) < 0.0001) return `<td class="diff-zero">0</td>`;
+    return `<td class="${ok ? 'diff-ok' : 'diff-bad'}">${delta > 0 ? '+' : ''}${fmt(delta, delta % 1 === 0 ? 0 : 5)}</td>`;
+  };
+
+  tbody.innerHTML = allLines.map(ln => {
+    const s = stagingMap[ln], d = dbcMap[ln];
+    let rowClass = 'row-match';
+    if (!s) rowClass = 'row-only-ax';
+    else if (!d) rowClass = 'row-only-staging';
+    else {
+      const qd = Math.abs(dQty(d) - sQty(s));
+      const pd = Math.abs(dPrice(d) - sPrice(s));
+      if (qd > 0.01 || pd > 0.0001) rowClass = 'row-mismatch';
+    }
+    const itemId = s ? (getVal(s, 'ITEMID') ?? '—') : '—';
+    const color  = s ? sColor(s)  : (d ? dColor(d)  : '—');
+    const size   = s ? sSize(s)   : (d ? dSize(d)   : '—');
+    const season = s ? sSeason(s) : (d ? dSeason(d) : '—');
+    const stgQty   = s ? sQty(s)   : null;
+    const dbcQty   = d ? dQty(d)   : null;
+    const stgPrice = s ? sPrice(s) : null;
+    const dbcPrice = d ? dPrice(d) : null;
+    const dQ = (stgQty !== null && dbcQty !== null)    ? (dbcQty   - stgQty)   : null;
+    const dP = (stgPrice !== null && dbcPrice !== null) ? (dbcPrice - stgPrice) : null;
+    const qtyOk   = dQ !== null && Math.abs(dQ) < 0.01;
+    const priceOk = dP !== null && Math.abs(dP) < 0.0001;
+    const dbcStat   = d ? parseInt(dStatus(d)) : null;
+    const isImported = dbcStat === 9;
+    const dbcStatusCell = d
+      ? `<td><span style="font-family:var(--mono);font-size:11px;padding:2px 7px;border-radius:4px;background:${isImported ? 'rgba(62,207,142,0.12)' : 'rgba(251,146,60,0.12)'};color:${isImported ? 'var(--green)' : 'var(--orange)'};">${dbcStat}</span></td>`
+      : `<td class="td-dim">&#8212;</td>`;
+    let transferCell;
+    if (!s) {
+      transferCell = `<td class="td-dim">&#8212;</td>`;
+    } else if (!isImported) {
+      transferCell = `<td><span class="transfer-badge transfer-pending">&#8856; Not Imported</span></td>`;
+    } else {
+      const tv = sXfer(s);
+      transferCell = `<td><span class="transfer-badge ${tCls[tv] || 'transfer-pending'}">&#9679; ${tLabels[tv] || '?'}</span></td>`;
+    }
+    let statusCell;
+    if (!s) statusCell = `<td><span class="match-badge match-ax">DBC Only</span></td>`;
+    else if (!d) statusCell = `<td><span class="match-badge match-staging">Stg Only</span></td>`;
+    else if (!qtyOk || !priceOk) statusCell = `<td><span class="match-badge match-bad">&#10007; Mismatch</span></td>`;
+    else statusCell = `<td><span class="match-badge match-ok">&#10003; Match</span></td>`;
+    return `<tr class="${rowClass}">
+      <td class="num">${ln}</td>
+      <td>${itemId !== '—' ? itemId : '<span class="td-dim">&#8212;</span>'}</td>
+      <td>${color  !== '—' ? color  : '<span class="td-dim">&#8212;</span>'}</td>
+      <td>${size   !== '—' ? size   : '<span class="td-dim">&#8212;</span>'}</td>
+      <td>${season !== '—' ? season : '<span class="td-dim">&#8212;</span>'}</td>
+      ${tdNum(stgQty,   0)}${tdNum(dbcQty,   0)}${tdDiff(dQ, qtyOk)}
+      ${tdNum(stgPrice, 5)}${tdNum(dbcPrice, 5)}${tdDiff(dP, priceOk)}
+      ${dbcStatusCell}${transferCell}${statusCell}
+    </tr>`;
+  }).join('');
+
+  const lc = document.getElementById('comparedbc-line-count');
+  if (lc) lc.textContent = allLines.length + ' lines';
 }
 
 // ── Compare PO ─────────────────────────────────────────────────────
@@ -517,8 +1030,8 @@ function renderResults(rows, po, serverTotalQty, serverTotalAmount, raw = {}) {
     cols = ['EXEC ID', 'SITE', 'LINE', 'PO', 'ITEM ID', 'SIZE', 'COLOR', 'SEASON'];
     colKeys = ['EXECUTIONID', 'INVENTSITEID', 'LINENUMBER', 'PURCHID', 'ITEMID', 'INVENTSIZEID', 'INVENTCOLORID', 'INVENTSEASONID'];
   } else if (mode === 'packroll') {
-    cols = ['LINE', 'ITEM ID', 'QUANTITY', 'RECEIVED', 'Deliver_Remainder', 'ORDERED', 'Invent_Unit_QTY', 'Compare_O_I', 'Compare_Q_R'];
-    colKeys = ['LINENUMBER', 'ITEMID', 'Quantity', 'Received', 'Deliver_Remainder', 'Ordered', 'Invent_Unit_QTY', 'Compare_O_I', 'Compare_Q_R'];
+    cols = ['LINE', 'PURCHID', 'ITEM ID', 'QUANTITY', 'RECEIVED', 'Deliver_Remainder', 'ORDERED', 'Invent_Unit_QTY', 'Compare_O_I', 'Compare_Q_R'];
+    colKeys = ['LINENUMBER', 'PURCHID', 'ITEMID', 'Quantity', 'Received', 'Deliver_Remainder', 'Ordered', 'Invent_Unit_QTY', 'Compare_O_I', 'Compare_Q_R'];
   } else {
     cols = ['ARRIVAL NUM', 'PO', 'LOCATION', 'SITE', 'CREATED', 'POSTED DATE', 'POSTED', 'CREATED BY'];
     colKeys = ['ITEMARRIVALNUM', 'PURCHID', 'INVENTLOCATIONID', 'INVENTSITEID', 'CREATEDDATETIME', 'POSTEDDATETIME', 'POSTED', 'CREATEDBY'];
@@ -723,14 +1236,34 @@ function renderResults(rows, po, serverTotalQty, serverTotalAmount, raw = {}) {
       </div>`;
     return;
   } else if (mode === 'packroll') {
+    lastPackrollRows = rows;
     const totalQty = rows.reduce((s, r) => s + (parseFloat(getVal(r, 'Quantity') || 0) || 0), 0);
     const totalReceived = rows.reduce((s, r) => s + (parseFloat(getVal(r, 'Received') || 0) || 0), 0);
     const totalRemainder = rows.reduce((s, r) => s + (parseFloat(getVal(r, 'Deliver Remainder') || 0) || 0), 0);
+    const uniqItemIds = [...new Set(rows.map(r => getVal(r, 'ITEMID')).filter(v => v != null && v !== ''))].sort();
+    const uniqPurchIds = [...new Set(rows.map(r => getVal(r, 'PURCHID')).filter(v => v != null && v !== ''))].sort();
     summaryHTML = `<div class="summary-row">
-      <div class="summary-card"><div class="summary-label">Total Lines</div><div class="summary-value teal">${rows.length}</div></div>
+      <div class="summary-card"><div class="summary-label">Total Lines</div><div class="summary-value teal" id="packroll-line-count">${rows.length}</div></div>
       <div class="summary-card"><div class="summary-label">Total Quantity</div><div class="summary-value blue">${parseFloat(totalQty).toLocaleString()}</div></div>
       <div class="summary-card"><div class="summary-label">Total Received</div><div class="summary-value green">${parseFloat(totalReceived).toLocaleString()}</div></div>
       <div class="summary-card"><div class="summary-label">Deliver Remainder</div><div class="summary-value ${totalRemainder > 0 ? 'orange' : 'green'}">${parseFloat(totalRemainder).toLocaleString()}</div></div>
+    </div>
+    <div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;padding:10px 0 4px;">
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);letter-spacing:0.06em;text-transform:uppercase;">Item ID</div>
+        <select id="packroll-filter-itemid" onchange="applyPackrollFilter()"
+          style="background:var(--surface2);border:1px solid var(--border);color:var(--text-primary);font-family:var(--mono);font-size:11px;padding:5px 8px;border-radius:6px;cursor:pointer;min-width:130px;">
+          <option value="">All</option>
+          ${uniqItemIds.map(v => `<option value="${v}">${v}</option>`).join('')}
+        </select>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);letter-spacing:0.06em;text-transform:uppercase;">PO</div>
+        <div id="packroll-po-display"
+          style="background:var(--surface2);border:1px solid var(--border);color:var(--accent);font-family:var(--mono);font-size:11px;padding:5px 10px;border-radius:6px;min-width:120px;letter-spacing:0.04em;">${uniqPurchIds.join(', ') || '—'}</div>
+      </div>
+      <button onclick="document.getElementById('packroll-filter-itemid').value='';applyPackrollFilter();"
+        style="align-self:flex-end;padding:5px 12px;background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);font-family:var(--mono);font-size:11px;border-radius:6px;cursor:pointer;">✕ Clear</button>
     </div>`;
   } else {
     const posted = rows.filter(r => parseInt(r.POSTED) === 1).length;
@@ -751,7 +1284,7 @@ function renderResults(rows, po, serverTotalQty, serverTotalAmount, raw = {}) {
     <div class="table-wrap">
       <table>
         <thead><tr>${cols.map(c => `<th>${c}</th>`).join('')}</tr></thead>
-        <tbody id="${mode === 'count' ? 'count-tbody' : mode === 'search' ? 'search-tbody' : ''}">${rows_html}</tbody>
+        <tbody id="${mode === 'count' ? 'count-tbody' : mode === 'search' ? 'search-tbody' : mode === 'packroll' ? 'packroll-tbody' : ''}">${rows_html}</tbody>
       </table>
     </div>`;
 }
@@ -775,7 +1308,8 @@ function exportToExcel() {
 
   const modeLabel = {
     search: 'Search', list: 'ErrorPO', count: 'POLine_AX', update: 'PackRoll',
-    packroll: 'QtyPackRoll', compare: 'ComparePO', check: 'BotPO'
+    packroll: 'QtyPackRoll', compare: 'Compare_Stg_AX', check: 'BotPO',
+    searchdbc: 'SearchDBC', comparedbc: 'Compare_Stg_DBC'
   }[mode] || mode;
   const filename = `PO_${modeLabel}_${new Date().toISOString().slice(0, 10)}.xlsx`;
 
@@ -789,7 +1323,9 @@ function exportToExcel() {
 function showLoading() {
   const loadingMsg = mode === 'compare'
     ? '<span>Fetching Staging + AX in parallel…</span>'
-    : '<span>Executing query…</span>';
+    : mode === 'comparedbc'
+      ? '<span>Fetching Staging + DBC in parallel…</span>'
+      : '<span>Executing query…</span>';
   document.getElementById('results-area').innerHTML =
     `<div class="state-box"><div class="spinner"></div>${loadingMsg}</div>`;
 }
@@ -1595,4 +2131,46 @@ function applyCountFilter() {
 
   const lineCount = document.getElementById('count-line-count');
   if (lineCount) lineCount.textContent = filtered.length;
+}
+
+// ── QTY Pack/Roll Filter ───────────────────────────────────────────
+function applyPackrollFilter() {
+  const tbody = document.getElementById('packroll-tbody');
+  if (!tbody || !lastPackrollRows.length) return;
+
+  const fItemId = document.getElementById('packroll-filter-itemid')?.value || '';
+
+  const filtered = lastPackrollRows.filter(r => {
+    if (fItemId && getVal(r, 'ITEMID') !== fItemId) return false;
+    return true;
+  });
+
+  const colKeys = ['LINENUMBER', 'PURCHID', 'ITEMID', 'Quantity', 'Received', 'Deliver_Remainder', 'Ordered', 'Invent_Unit_QTY', 'Compare_O_I', 'Compare_Q_R'];
+
+  tbody.innerHTML = filtered.map(r =>
+    '<tr>' + colKeys.map(k => {
+      let val = getVal(r, k);
+      val = (val !== undefined && val !== null && val !== '') ? val : '—';
+      if (val !== '—') {
+        if (['Quantity', 'Received', 'Deliver Remainder', 'Ordered', 'Invent Unit QTY'].includes(k))
+          val = parseFloat(val || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+      }
+      if (k === 'Compare_O_I' || k === 'Compare_Q_R') {
+        const isTrue = String(val).toLowerCase() === 'true';
+        return `<td><span class="${isTrue ? 'posted-yes' : 'posted-no'}">${isTrue ? '✓ True' : '✗ False'}</span></td>`;
+      }
+      if (k === 'LINENUMBER') return `<td class="num">${val}</td>`;
+      if (!val || val === '—') return `<td class="td-dim">—</td>`;
+      return `<td>${val}</td>`;
+    }).join('') + '</tr>'
+  ).join('');
+
+  const lineCount = document.getElementById('packroll-line-count');
+  if (lineCount) lineCount.textContent = filtered.length;
+
+  const poDisplay = document.getElementById('packroll-po-display');
+  if (poDisplay) {
+    const pos = [...new Set(filtered.map(r => getVal(r, 'PURCHID')).filter(v => v != null && v !== ''))].sort();
+    poDisplay.textContent = pos.length ? pos.join(', ') : '—';
+  }
 }

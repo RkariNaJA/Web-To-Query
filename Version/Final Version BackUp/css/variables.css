@@ -1,0 +1,53 @@
+/* ================================================================
+   PO · QUERY  —  High-Fidelity Data Terminal
+   ================================================================ */
+
+:root {
+  /* ── Core surfaces ── */
+  --bg: #060810;
+  --surface: #0b0e18;
+  --surface2: #10141f;
+  --surface3: #161c2c;
+  --border: #1c2235;
+  --border-accent: #293050;
+  --border-bright: #3a4d70;
+
+  /* ── Text layers ── */
+  --text-primary: #edf1fb;
+  --text: #c2ccdf;
+  --text-muted: #546080;
+  --text-dim: #2a3248;
+
+  /* ── Accent — electric cobalt ── */
+  --accent: #5b9cf6;
+  --accent-bright: #80b5ff;
+  --accent-glow: rgba(91, 156, 246, 0.14);
+  --accent-glow-strong: rgba(91, 156, 246, 0.34);
+
+  /* ── Green — neon mint ── */
+  --green: #3ecf8e;
+  --green-glow: rgba(62, 207, 142, 0.11);
+  --green-glow-strong: rgba(62, 207, 142, 0.28);
+
+  /* ── Red — hot coral ── */
+  --red: #ff6b72;
+  --red-glow: rgba(255, 107, 114, 0.11);
+  --red-glow-strong: rgba(255, 107, 114, 0.28);
+
+  /* ── Others ── */
+  --yellow: #f0c060;
+  --yellow-glow: rgba(240, 192, 96, 0.13);
+  --purple: #a78bfa;
+  --purple-glow: rgba(167, 139, 250, 0.11);
+  --purple-glow-strong: rgba(167, 139, 250, 0.28);
+  --orange: #fb923c;
+  --orange-glow: rgba(251, 146, 60, 0.11);
+  --teal: #2dd4bf;
+  --teal-glow: rgba(45, 212, 191, 0.11);
+  --teal-glow-strong: rgba(45, 212, 191, 0.28);
+
+  /* ── Typography ── */
+  --mono: 'IBM Plex Mono', monospace;
+  --sans: 'IBM Plex Sans', sans-serif;
+}
+

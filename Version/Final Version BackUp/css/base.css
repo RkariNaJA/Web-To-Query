@@ -1,0 +1,54 @@
+/* ── Reset ─────────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── Body ──────────────────────────────────────────────────────── */
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Fine grid */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(91, 156, 246, 0.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(91, 156, 246, 0.022) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Ambient atmospheric glow */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 90% 45% at 55% -5%, rgba(91, 156, 246, 0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 30% at 0% 100%, rgba(167, 139, 250, 0.04) 0%, transparent 50%),
+    radial-gradient(ellipse 30% 25% at 100% 80%, rgba(45, 212, 191, 0.03) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Layout ────────────────────────────────────────────────────── */
+.layout {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 272px 1fr;
+  grid-template-rows: 58px 1fr;
+  height: 100vh;
+}
+
