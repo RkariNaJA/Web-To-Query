@@ -840,27 +840,27 @@ function showCheckSummary() {
       data.forEach(function(d){keep[d.po]=true;});
       var groups={},order=[];
       var addTo=function(arr,v){if(v&&v!=='—'&&arr.indexOf(v)<0)arr.push(v);};
+      var val=function(v){return (!v||v==='—')?'-':v;};
       ALL_ROWS.forEach(function(r){
         var po=gv(r,'PURCHID')||'(unknown)';
         if(!keep[po])return;
         var item=gv(r,'ITEMID')||'(unknown)';
-        var se=gv(r,'INVENTSEASONID');
-        if(!se||se==='—')se='-';
-        var k=item+'||'+se;
+        var se=val(gv(r,'INVENTSEASONID'));
+        var co=val(gv(r,'INVENTCOLORID'));
+        var k=item+'||'+se+'||'+co;
         var e=groups[k];
-        if(!e){e=groups[k]={item:item,season:se,pos:[],colors:[],sizes:[]};order.push(k);}
+        if(!e){e=groups[k]={item:item,season:se,color:co,pos:[],sizes:[]};order.push(k);}
         addTo(e.pos,po);
-        addTo(e.colors,gv(r,'INVENTCOLORID'));
         addTo(e.sizes,gv(r,'INVENTSIZEID'));
       });
       order.sort(function(a,b){
         var x=groups[a],y=groups[b];
-        return x.item.localeCompare(y.item)||x.season.localeCompare(y.season);
+        return x.item.localeCompare(y.item)||x.season.localeCompare(y.season)||x.color.localeCompare(y.color);
       });
       var aoa=[['ITEM','PO','Color','SIZE','SEASON']];
       order.forEach(function(k){
         var e=groups[k];
-        aoa.push([e.item,jod(e.pos.sort()),jod(e.colors.sort()),jod(e.sizes.sort()),e.season]);
+        aoa.push([e.item,jod(e.pos.sort()),e.color,jod(e.sizes.sort()),e.season]);
       });
       var ws=X.utils.aoa_to_sheet(aoa);
       ws['!cols']=[{wch:22},{wch:48},{wch:40},{wch:40},{wch:24}];

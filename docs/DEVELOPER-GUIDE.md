@@ -127,12 +127,14 @@ an Excel export that follows that filter:
 | Card | Filter | Export |
 | ---- | ------ | ------ |
 | ITEM SUMMARY | substring on item | one row per item: `ITEM, Color, SIZE, SEASON` |
-| PO SUMMARY | **many POs at once** — `poTerms()` splits the box on commas, semicolons and whitespace, then a PO matches if it contains *any* term | one row per **item + season**: `ITEM, PO, Color, SIZE, SEASON`, each cell comma-joined and deduplicated |
+| PO SUMMARY | **many POs at once** — `poTerms()` splits the box on commas, semicolons and whitespace, then a PO matches if it contains *any* term | one row per **item + season + colour**: `ITEM, PO, Color, SIZE, SEASON`, with PO and SIZE comma-joined and deduplicated inside the row |
 
 Two things about the PO Summary export are easy to get wrong:
 
-- It reads **`ALL_ROWS`, not `PO_DATA`**. `PO_DATA` rolls seasons up per PO, so a colour can no
-  longer be traced back to one season — grouping by item + season needs the raw rows.
+- It reads **`ALL_ROWS`, not `PO_DATA`**. `PO_DATA` rolls colours, sizes and seasons up per PO, so a
+  colour can no longer be traced back to one season — grouping by item + season + colour needs the
+  raw rows. The grouping key is `item||season||colour`; only PO and SIZE are joined within a group,
+  and a missing colour or season becomes `-`.
 - The card's header count and its red `PO: …` strip are **not static**. `renderPoSummary()` rewrites
   both, so they always show the filtered set.
 

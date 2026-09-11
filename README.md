@@ -74,7 +74,8 @@ not a new page.
 - **Excel export** of exactly what the table shows — filters and column choices included, not the
   raw response. The BotPO summary adds two of its own, each exporting only what its card's filter
   currently matches: **Item Summary**, one deduplicated row per item, and **PO Summary**, one row per
-  item *per season*, with that season's POs, colours and sizes comma-joined into a cell each.
+  item *per season per colour*, with that row's POs and sizes comma-joined into a cell each — so a
+  row splits only where a value genuinely differs.
 - **Query history**, kept client-side, so re-running yesterday's check is one click.
 - **Three themes** — dark, light and `space` — set on `data-theme` and remembered.
 - **Full-error popup** for rows whose error text is far too long for a cell.
