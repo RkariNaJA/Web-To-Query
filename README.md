@@ -21,6 +21,9 @@ page renders.
 browser  →  { queryType, searchKeyword }  →  one n8n webhook  →  MSSQL (Staging · AX · DBC)  →  table
 ```
 
+Both ends of that arrow are pictured here: the page below, and
+**[the n8n workflow that answers it](#the-other-half-the-n8n-workflow)**.
+
 ![BotPO Checking: SQL preview, per-column filters and 31 result rows](docs/images/web-to-query.jpg)
 
 <sub>**BotPO Checking** on real data — execution IDs, PO numbers, item IDs, colour codes, seasons and
@@ -73,6 +76,35 @@ A mode's key and its wire value need not match. `QUERY_TYPES` in
 [`js/core.js`](Final%20Version/js/core.js) maps the ones that differ — mode `find` posts `Find` —
 so internal keys stay lowercase like every other mode while the payload keeps the exact spelling the
 n8n Switch expects.
+
+---
+
+## The other half: the n8n workflow
+
+Everything above happens in a browser that cannot reach a database. This is what receives it.
+
+![The n8n workflow: one webhook, a Switch on queryType, one query branch per mode, one response](docs/images/n8n-workflow.jpg)
+
+<sub>**Web - MSSQL Database Query** — the whole backend on one canvas. A single **Webhook** takes the
+`POST`, two Code nodes parse it, and **Route by Query Type** fans out to one branch per mode. Each
+branch is an **Execute Query** node paired with a Code node that reshapes the rows, and every branch
+converges on one **Respond to Webhook**.</sub>
+
+Reading it left to right explains the whole contract:
+
+- **One entry point.** Every mode posts to the same URL. There is no per-mode endpoint to configure,
+  which is why the app needs exactly one setting.
+- **The Switch is the routing table.** `queryType` picks the branch — so the value a tab posts *is*
+  the question it asks, and two tabs posting the same value are the same question. The Switch ends in
+  a **Fallback** output, so an unrecognised value doesn't error, it just returns nothing useful.
+- **The SQL lives here, not in the page.** Each `Execute Query` node holds its own statement against
+  Staging, AX or DBC. The browser only ever names a mode.
+- **Adding a mode is adding a branch.** A new Switch output, an Execute Query, a Format node — the
+  frontend side is a table entry and a nav item.
+
+> ⚠️ The two sides are edited independently and nothing links them. A mode whose `queryType` has no
+> matching Switch output silently takes the Fallback; a Switch branch nobody posts to is dead. When
+> you add or rename a mode, change both.
 
 ---
 
