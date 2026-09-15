@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import * as XLSX from 'xlsx';
-import { getVal } from '../utils';
+import { getVal, fmt } from '../utils';
 
 function TransferBadge({ val }) {
   const v = parseInt(val);
@@ -12,15 +12,14 @@ function TransferBadge({ val }) {
 const COLS = ['LINE','EXEC ID','ITEM ID','SIZE','COLOR','STYLE','QTY','PRICE','AMOUNT','JOB NO','SITE','LOCATION','STATUS','TRANSFER'];
 const KEYS = ['LINENUMBER','EXECUTIONID','ITEMID','INVENTSIZEID','INVENTCOLORID','INVENTSTYLEID','PURCHQTY','PURCHPRICE','LINEAMOUNT','JOBNUMBER','INVENTSITEID','INVENTLOCATIONID','INVENTSTATUSID','TRANSFERSTATUS'];
 
-export default function SearchTab({ rows, po }) {
+// Shared by `search` and `find` (PO-V2) — same columns, summary and filters;
+// only the tag differs, because the two tabs ask different n8n branches.
+export default function SearchTab({ rows, po, mode = 'search' }) {
+  const tagClass = mode === 'find' ? 'tag-find' : 'tag-search';
+  const tagLabel = mode === 'find' ? 'PO-V2 (STAGGING)' : 'SEARCH PO (STAGING)';
   const [fColor,  setFColor]  = useState('');
   const [fSize,   setFSize]   = useState('');
   const [fSeason, setFSeason] = useState('');
-
-  const totalQty = rows.reduce((s, r) => s + (parseFloat(getVal(r,'PURCHQTY')   || 0) || 0), 0);
-  const totalAmt = rows.reduce((s, r) => s + (parseFloat(getVal(r,'LINEAMOUNT') || 0) || 0), 0);
-  const errCount = rows.filter(r => parseInt(getVal(r,'TRANSFERSTATUS')) === 2).length;
-  const okCount  = rows.filter(r => parseInt(getVal(r,'TRANSFERSTATUS')) === 1).length;
 
   const colorOpts  = useMemo(() => [...new Set(rows.map(r => getVal(r,'INVENTCOLORID')).filter(Boolean))].sort(), [rows]);
   const sizeOpts   = useMemo(() => [...new Set(rows.map(r => getVal(r,'INVENTSIZEID')).filter(Boolean))].sort(),  [rows]);
@@ -33,11 +32,18 @@ export default function SearchTab({ rows, po }) {
     return true;
   }), [rows, fColor, fSize, fSeason]);
 
+  // Every card reads the filtered set, so the numbers track the dropdowns —
+  // the vanilla app recalculates all five in applySearchFilter().
+  const totalQty = filtered.reduce((s, r) => s + (parseFloat(getVal(r,'PURCHQTY')   || 0) || 0), 0);
+  const totalAmt = filtered.reduce((s, r) => s + (parseFloat(getVal(r,'LINEAMOUNT') || 0) || 0), 0);
+  const errCount = filtered.filter(r => parseInt(getVal(r,'TRANSFERSTATUS')) === 2).length;
+  const okCount  = filtered.filter(r => parseInt(getVal(r,'TRANSFERSTATUS')) === 1).length;
+
   function exportExcel() {
     const data = [COLS, ...filtered.map(r => KEYS.map(k => {
       let v = getVal(r, k);
       if (v == null || v === '') return '';
-      if (k === 'PURCHQTY')    return parseFloat(v).toFixed(0);
+      if (k === 'PURCHQTY')    return parseFloat(v).toFixed(4);
       if (k === 'PURCHPRICE')  return parseFloat(v).toFixed(5);
       if (k === 'LINEAMOUNT')  return parseFloat(v).toFixed(2);
       return v;
@@ -51,16 +57,16 @@ export default function SearchTab({ rows, po }) {
   return (
     <>
       <div className="summary-row">
-        <div className="summary-card"><div className="summary-label">Total Lines</div><div className="summary-value blue">{rows.length}</div></div>
+        <div className="summary-card"><div className="summary-label">Total Lines</div><div className="summary-value blue">{filtered.length}</div></div>
         <div className="summary-card"><div className="summary-label">Completed</div><div className="summary-value green">{okCount}</div></div>
         <div className="summary-card"><div className="summary-label">Errors</div><div className={`summary-value ${errCount > 0 ? 'red' : 'green'}`}>{errCount}</div></div>
-        <div className="summary-card"><div className="summary-label">Total Qty</div><div className="summary-value">{parseFloat(totalQty).toLocaleString()}</div></div>
+        <div className="summary-card"><div className="summary-label">Total Qty</div><div className="summary-value">{fmt(totalQty, 4)}</div></div>
         <div className="summary-card"><div className="summary-label">Total Amount</div><div className="summary-value">{parseFloat(totalAmt).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</div></div>
       </div>
 
       <div className="results-meta">
         <span className="results-count">Showing <strong>{filtered.length}</strong>{filtered.length !== rows.length ? ` / ${rows.length}` : ''} row{filtered.length !== 1 ? 's' : ''} for PO <strong>{po}</strong></span>
-        <span className="tag tag-search">SEARCH PO (STAGING)</span>
+        <span className={`tag ${tagClass}`}>{tagLabel}</span>
         <button className="export-btn" style={{ marginLeft:'auto' }} onClick={exportExcel}>⬇ Export Excel</button>
       </div>
 
@@ -100,7 +106,7 @@ export default function SearchTab({ rows, po }) {
                   let raw = getVal(r, k);
                   let val = (raw !== undefined && raw !== null && raw !== '') ? raw : '—';
                   if (val !== '—') {
-                    if (k === 'PURCHQTY')   val = parseFloat(val || 0).toFixed(0);
+                    if (k === 'PURCHQTY')   val = parseFloat(val || 0).toFixed(4);
                     if (k === 'PURCHPRICE') val = parseFloat(val || 0).toFixed(5);
                     if (k === 'LINEAMOUNT') val = parseFloat(val || 0).toFixed(2);
                   }

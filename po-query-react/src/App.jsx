@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { fetchQuery, getVal } from './utils';
-import { MODES } from './constants';
+import { MODES, QUERY_TYPES, isStagingSearch } from './constants';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import QueryBar from './components/QueryBar';
@@ -17,6 +17,7 @@ import UpdateStagingTab from './tabs/UpdateStagingTab';
 import SearchDBCTab from './tabs/SearchDBCTab';
 import CompareDBCTab from './tabs/CompareDBCTab';
 import CheckItemAXTab from './tabs/CheckItemAXTab';
+import CheckUnitAXTab from './tabs/CheckUnitAXTab';
 
 function getInitialConfig() {
   return {
@@ -112,6 +113,13 @@ export default function App() {
         updateBadge('item', rows.length);
         setUiState({ type: 'result', mode: 'item', rows, po: poInput.trim(), raw });
 
+      } else if (mode === 'unit') {
+        const { rows, raw } = await fetchQuery(config.webhook, config.auth, 'unit', poInput.trim(), null, { dataAreaId: itemInputs.company });
+        const count = raw.totalRows ?? rows.length;
+        addHistory(poInput.trim(), mode, count);
+        updateBadge('unit', rows.length);
+        setUiState({ type: 'result', mode: 'unit', rows, po: poInput.trim(), raw });
+
       } else if (mode === 'compare') {
         const [stagingRes, axRes] = await Promise.all([
           fetchQuery(config.webhook, config.auth, 'search', poInput.trim()),
@@ -144,7 +152,7 @@ export default function App() {
 
       } else {
         const execId = mode === 'updatestaging' ? execInput.trim() : null;
-        const { rows, raw } = await fetchQuery(config.webhook, config.auth, mode, poInput.trim(), execId);
+        const { rows, raw } = await fetchQuery(config.webhook, config.auth, QUERY_TYPES[mode] || mode, poInput.trim(), execId);
         const serverTotalQty    = getVal(raw, 'totalQTY')       ?? getVal(raw, 'total_qty')    ?? null;
         const serverTotalAmount = getVal(raw, 'totalNetAmount') ?? getVal(raw, 'total_amount') ?? null;
         const count = mode === 'updatestaging' ? (raw.rowsAffected ?? 0) : rows.length;
@@ -208,12 +216,14 @@ export default function App() {
 
       const emptyMsgs = {
         search:   `No staging data found for PO ${po}.`,
+        find:     `No staging data found for PO ${po}.`,
         list:     `✅ No errors — all lines transferred successfully for PO ${po}.`,
         count:    `No PO lines found in AX for PO ${po}.`,
         update:   `No Pack/Roll records found for PO ${po}.`,
         packroll: `No QTY Pack/Roll lines found for PO ${po}.`,
         check:    `No BotPO data found for PO ${po}.`,
         item:     `No variants found for Item ID ${po}.`,
+        unit:     `No unit data found for Item ID ${po}.`,
       };
 
       if (!rows || rows.length === 0) {
@@ -225,13 +235,14 @@ export default function App() {
         );
       }
 
-      if (rMode === 'search')   return <SearchTab rows={rows} po={po} />;
+      if (isStagingSearch(rMode)) return <SearchTab rows={rows} po={po} mode={rMode} />;
       if (rMode === 'list')     return <ErrorPOTab rows={rows} po={po} />;
       if (rMode === 'count')    return <POLineAXTab rows={rows} po={po} serverTotalQty={serverTotalQty} serverTotalAmount={serverTotalAmount} />;
       if (rMode === 'update')   return <PackRollTab rows={rows} po={po} />;
       if (rMode === 'packroll') return <QtyPackRollTab rows={rows} po={po} />;
       if (rMode === 'check')    return <BotPOCheckTab rows={rows} po={po} />;
       if (rMode === 'item')     return <CheckItemAXTab rows={rows} po={po} />;
+      if (rMode === 'unit')     return <CheckUnitAXTab rows={rows} po={po} />;
     }
     return null;
   }
@@ -258,7 +269,7 @@ export default function App() {
           {renderResults()}
         </div>
       </main>
-      <ConfigModal open={configOpen} config={config} onSave={saveConfig} onClose={() => setConfigOpen(false)} />
+      {configOpen && <ConfigModal config={config} onSave={saveConfig} onClose={() => setConfigOpen(false)} />}
     </div>
   );
 }

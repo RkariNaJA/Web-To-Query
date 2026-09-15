@@ -1,19 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
-export default function ConfigModal({ open, config, onSave, onClose }) {
+// The parent mounts this only while the dialog is open, so the fields seed
+// themselves from `config` on every open — no effect syncing props into state.
+export default function ConfigModal({ config, onSave, onClose }) {
   const [webhook, setWebhook] = useState(config.webhook);
   const [auth, setAuth] = useState(config.auth);
-
-  useEffect(() => {
-    setWebhook(config.webhook);
-    setAuth(config.auth);
-  }, [open, config]);
 
   function handleSave() {
     onSave({ webhook: webhook.trim(), auth: auth.trim() });
   }
-
-  if (!open) return null;
 
   return (
     <div className="config-modal open" onClick={e => e.target === e.currentTarget && onClose()}>

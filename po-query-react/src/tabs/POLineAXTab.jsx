@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { getVal } from '../utils';
+import { exportRows } from '../exportExcel';
 
 const COLS = ['LINE','PO','ITEM ID','JOB NO','COLOR','SIZE','SEASON','QTY','UNIT PRICE','NET AMOUNT','SITE','UNIT'];
 const KEYS = ['LINENUMBER','PURCHID','ITEMID','INVENTSERIALID','COLOR','SIZE','SEASON','QTY','UNIT_PRICE','NET_AMOUNT','SITE','PURCHUNIT'];
@@ -65,6 +66,17 @@ export default function POLineAXTab({ rows, po, serverTotalQty, serverTotalAmoun
       <div className="results-meta">
         <span className="results-count">Showing <strong>{filtered.length}</strong> row{filtered.length !== 1 ? 's' : ''} for PO <strong>{po}</strong></span>
         <span className="tag tag-count">PO LINE (AX)</span>
+        <button
+          className="export-btn"
+          style={{ marginLeft:'auto' }}
+          onClick={() => exportRows({
+            cols: COLS, keys: KEYS, rows: filtered,
+            sheet: 'POLine_AX', file: `PO_POLineAX_${po}`,
+            format: (k, v) => (k === 'QTY' ? parseFloat(v).toFixed(4)
+              : k === 'UNIT_PRICE' ? parseFloat(v).toFixed(5)
+              : k === 'NET_AMOUNT' ? parseFloat(v).toFixed(2) : v),
+          })}
+        >⬇ Export Excel</button>
       </div>
       <div className="table-wrap">
         <table>
@@ -76,7 +88,7 @@ export default function POLineAXTab({ rows, po, serverTotalQty, serverTotalAmoun
                   let raw = getVal(r, k);
                   let val = (raw !== undefined && raw !== null && raw !== '') ? raw : '—';
                   if (val !== '—') {
-                    if (k === 'QTY')        val = parseFloat(val||0).toFixed(0);
+                    if (k === 'QTY')        val = parseFloat(val||0).toFixed(4);
                     if (k === 'UNIT_PRICE') val = parseFloat(val||0).toFixed(5);
                     if (k === 'NET_AMOUNT') val = parseFloat(val||0).toFixed(2);
                   }

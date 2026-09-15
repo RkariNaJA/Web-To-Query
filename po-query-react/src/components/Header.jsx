@@ -1,13 +1,7 @@
 const THEME_ICONS = { dark: '🌙', light: '☀', space: '✦' };
 const THEME_CYCLE = { dark: 'light', light: 'space', space: 'dark' };
 
-export default function Header({ onOpenConfig, webhookUrl, theme, onCycleTheme }) {
-  let display = 'Not configured';
-  if (webhookUrl) {
-    try { const u = new URL(webhookUrl); display = u.hostname + u.pathname; }
-    catch { display = webhookUrl.slice(0, 32) + '…'; }
-  }
-
+export default function Header({ onOpenConfig, theme, onCycleTheme }) {
   return (
     <header>
       <div className="logo">

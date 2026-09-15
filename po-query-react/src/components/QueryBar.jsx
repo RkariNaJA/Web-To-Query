@@ -1,10 +1,15 @@
 export default function QueryBar({ mode, poInput, execInput, itemInputs, onPoChange, onExecChange, onItemChange, onClearItem, onRun, loading }) {
   const isUpdate = mode === 'updatestaging';
   const isItem   = mode === 'item';
+  const isUnit   = mode === 'unit';
+  // Both item modes key off an Item ID, and both take a Company; only `item`
+  // adds size / colour / season.
+  const isItemId = isItem || isUnit;
 
   const labelMap = {
     updatestaging: 'Purchase Order Number & Execution ID',
     item:          'Item ID · Size · Color · Season · Company',
+    unit:          'Item ID',
   };
 
   const wrapStyle = (w) => ({ flex: `0 1 ${w}px`, maxWidth: w });
@@ -16,11 +21,11 @@ export default function QueryBar({ mode, poInput, execInput, itemInputs, onPoCha
       </div>
       <div className="query-row">
         <div className="po-input-wrap">
-          <span className="po-prefix">{isItem ? 'ITEM_ID ›' : 'PO_ID ›'}</span>
+          <span className="po-prefix">{isItemId ? 'ITEM_ID ›' : 'PO_ID ›'}</span>
           <input
             className="po-input"
             type="text"
-            placeholder={isItem ? 'e.g. PSKNI701890' : 'e.g. CDHN26HTI020034'}
+            placeholder={isItemId ? 'e.g. PSKNI701890' : 'e.g. CDHN26HTI020034'}
             autoComplete="off"
             spellCheck="false"
             value={poInput}
@@ -60,12 +65,14 @@ export default function QueryBar({ mode, poInput, execInput, itemInputs, onPoCha
               <input className="po-input" type="text" placeholder="e.g. FA26" autoComplete="off" spellCheck="false"
                 value={itemInputs.season} onChange={e => onItemChange('season', e.target.value)} onKeyDown={e => e.key === 'Enter' && onRun()} />
             </div>
-            <div className="po-input-wrap" style={wrapStyle(140)}>
-              <span className="po-prefix">COMPANY ›</span>
-              <input className="po-input" type="text" placeholder="e.g. HT" autoComplete="off" spellCheck="false"
-                value={itemInputs.company} onChange={e => onItemChange('company', e.target.value)} onKeyDown={e => e.key === 'Enter' && onRun()} />
-            </div>
           </>
+        )}
+        {isItemId && (
+          <div className="po-input-wrap" style={wrapStyle(140)}>
+            <span className="po-prefix">COMPANY ›</span>
+            <input className="po-input" type="text" placeholder="e.g. HT" autoComplete="off" spellCheck="false"
+              value={itemInputs.company} onChange={e => onItemChange('company', e.target.value)} onKeyDown={e => e.key === 'Enter' && onRun()} />
+          </div>
         )}
         <div style={{ display:'flex', flexDirection:'column', gap:6, flexShrink:0 }}>
           <button className="run-btn" onClick={onRun} disabled={loading}>▶ RUN</button>

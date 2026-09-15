@@ -112,8 +112,10 @@ cd po-query-react
 npm install && npm run dev
 ```
 
-> ⚠️ **`Final Version` is the source of truth.** The React port lags by one mode — `Check Unit On AX`
-> was added to the vanilla app afterwards and never ported.
+> ⚠️ **`Final Version` is still the source of truth**, but the React port is now at feature parity:
+> all thirteen modes, the same filters and Excel exports, and the four report windows — which it
+> shares with the vanilla app by porting `js/reports.js` wholesale into `src/reports/`. Change a
+> report in one and copy it to the other; nothing keeps them in sync automatically.
 >
 > ⚠️ **Settings are per browser.** The webhook URL and auth token live in `localStorage`, so clearing
 > site data loses them — and `po_auth` is a token readable by any script on the page. Fine for an
@@ -130,7 +132,7 @@ npm install && npm run dev
 | **Dispatch** | [`js/core.js`](Final%20Version/js/core.js) holds the `MODES` table, the `QUERY_TYPES` overrides and `isStagingSearch()` · [`js/query.js`](Final%20Version/js/query.js) runs each mode, including the two parallel compares |
 | **Transport** | [`js/utils.js`](Final%20Version/js/utils.js) — `fetchQuery()` builds the request body and throws on non-2xx |
 | **Renderers** | one per shape: results, DBC header+lines, Staging vs AX, Staging vs DBC — modes that share a shape share a renderer, so `find` reuses everything `search` draws, down to the `#search-tbody` its filters target |
-| **React port** | [`po-query-react/`](po-query-react) — React 19 + Vite 8 |
+| **React port** | [`po-query-react/`](po-query-react) — React 19 + Vite 8, one component per mode in `src/tabs/`, the shared report windows in `src/reports/` |
 
 ---
 

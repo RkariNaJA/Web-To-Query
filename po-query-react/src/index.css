@@ -98,6 +98,9 @@ aside {
 .nav-item.active-updatestaging { border-left-color: var(--yellow); background: rgba(240,192,96,0.12); color: var(--yellow); }
 .nav-item.active-searchdbc { border-left-color: var(--pink); background: var(--pink-glow); color: var(--pink); }
 .nav-item.active-comparedbc { border-left-color: var(--pink); background: var(--pink-glow); color: var(--pink); }
+.nav-item.active-find { border-left-color: #a3e635; background: rgba(163,230,53,0.09); color: #a3e635; }
+.nav-item.active-item { border-left-color: #f472b6; background: rgba(244,114,182,0.09); color: #f472b6; }
+.nav-item.active-unit { border-left-color: #818cf8; background: rgba(129,140,248,0.09); color: #818cf8; }
 .nav-icon { font-family: var(--mono); font-size: 13px; width: 18px; text-align: center; }
 .nav-badge { margin-left: auto; font-family: var(--mono); font-size: 10px; padding: 2px 6px; border-radius: 3px; background: var(--surface2); color: var(--text-muted); }
 
@@ -142,6 +145,9 @@ main { display: flex; flex-direction: column; overflow: hidden; }
 .tag-searchdbc { border-color: var(--pink); color: var(--pink); background: var(--pink-glow); }
 .tag-comparedbc { border-color: var(--pink); color: var(--pink); background: var(--pink-glow); }
 .tag-ok { border-color: var(--green); color: var(--green); background: var(--green-glow); }
+.tag-find { border-color: rgba(163,230,53,0.4); color: #a3e635; background: rgba(163,230,53,0.07); }
+.tag-item { border-color: rgba(244,114,182,0.4); color: #f472b6; background: rgba(244,114,182,0.07); }
+.tag-unit { border-color: rgba(129,140,248,0.4); color: #818cf8; background: rgba(129,140,248,0.07); }
 
 /* Table */
 .table-wrap { flex: 1; overflow: auto; border: 1px solid var(--border); border-radius: 8px; min-height: 0; }
@@ -237,6 +243,9 @@ tr.row-only-ax { background: rgba(167,139,250,0.04); }
 .history-dot.updatestaging { background: var(--yellow); }
 .history-dot.searchdbc { background: var(--pink); }
 .history-dot.comparedbc { background: var(--pink); }
+.history-dot.find { background: #a3e635; }
+.history-dot.item { background: #f472b6; }
+.history-dot.unit { background: #818cf8; }
 
 /* Theme toggle button */
 .theme-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--text-muted); font-size: 14px; width: 30px; height: 30px; border-radius: 6px; cursor: pointer; display: grid; place-items: center; transition: all 0.15s; }
@@ -248,7 +257,8 @@ tr.row-only-ax { background: rgba(167,139,250,0.04); }
 .filter-label { font-family: var(--mono); font-size: 10px; color: var(--text-dim); letter-spacing: 0.06em; text-transform: uppercase; }
 .filter-select { background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-family: var(--mono); font-size: 11px; padding: 5px 8px; border-radius: 6px; cursor: pointer; min-width: 110px; outline: none; }
 .filter-select:focus { border-color: var(--accent); }
-.filter-count { align-self: flex-end; font-family: var(--mono); font-size: 11px; color: var(--text-dim); }
+/* Padding matches .filter-clear's, so the count sits on the button's baseline. */
+.filter-count { align-self: flex-end; padding: 6px 0; font-family: var(--mono); font-size: 11px; color: var(--text-dim); }
 .filter-clear { align-self: flex-end; padding: 5px 12px; background: var(--surface2); border: 1px solid var(--border); color: var(--text-muted); font-family: var(--mono); font-size: 11px; border-radius: 6px; cursor: pointer; }
 .filter-clear:hover { border-color: var(--red); color: var(--red); }
 

@@ -1,4 +1,5 @@
 import { getVal } from '../utils';
+import { exportRows } from '../exportExcel';
 
 const COLS = ['ARRIVAL NUM','PO','LOCATION','SITE','CREATED','POSTED DATE','POSTED','CREATED BY'];
 const KEYS = ['ITEMARRIVALNUM','PURCHID','INVENTLOCATIONID','INVENTSITEID','CREATEDDATETIME','POSTEDDATETIME','POSTED','CREATEDBY'];
@@ -16,6 +17,11 @@ export default function PackRollTab({ rows, po }) {
       <div className="results-meta">
         <span className="results-count">Showing <strong>{rows.length}</strong> row{rows.length !== 1 ? 's' : ''} for PO <strong>{po}</strong></span>
         <span className="tag tag-update">PACK / ROLL</span>
+        <button
+          className="export-btn"
+          style={{ marginLeft:'auto' }}
+          onClick={() => exportRows({ cols: COLS, keys: KEYS, rows, sheet: 'PackRoll', file: `PO_PackRoll_${po}` })}
+        >⬇ Export Excel</button>
       </div>
       <div className="table-wrap">
         <table>

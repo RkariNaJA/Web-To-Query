@@ -6,7 +6,8 @@ export function buildSqlPreview(mode, po, execId, itemInputs = {}) {
   const p = po || '?';
   const e = execId || '?';
 
-  if (mode === 'search') {
+  // `find` reads the same staging query as `search`; only the n8n branch differs.
+  if (mode === 'search' || mode === 'find') {
     return `${kw('SELECT')} ISSELECTED, TRANSFERSTATUS, LINENUMBER, EXECUTIONID,
        PURCHQTY, PURCHPRICE, LINEAMOUNT, PURCHUNIT,
        inventSerialId ${kw('AS')} JOBNUMBER, ITEMID, INVENTSIZEID,
@@ -118,6 +119,24 @@ ${kw('WHERE')} i.ITEMID ${kw('=')} ${vl(`'${p}'`)}
   ${kw('AND')} INVENTCOLORID ${kw('=')} ${vl(`'${cl}'`)}
   ${kw('AND')} INVENTSTYLEID ${kw('=')} ${vl(`'${sn}'`)}
   ${kw('AND')} i.DATAAREAID ${kw('=')} ${vl(`'${co}'`)};`;
+  }
+  if (mode === 'unit') {
+    const co = itemInputs.company || '';
+    return `${kw('SELECT DISTINCT')} TM.ITEMID,
+       UNITID ${kw('AS')} [PO_UNIT], UNITID ${kw('AS')} [SALES_UNIT], UNITID ${kw('AS')} [INVENT_UNIT],
+       BOMUNITID, REQGROUPID,
+       ${kw('CASE')} ${fn('CAST')}(MODULETYPE ${kw('AS')} varchar(10))
+           ${kw('WHEN')} ${vl("'2'")} ${kw('THEN')} ${vl("'Sales Order'")}
+           ${kw('WHEN')} ${vl("'0'")} ${kw('THEN')} ${vl("'Purchase Order'")}
+           ${kw('WHEN')} ${vl("'1'")} ${kw('THEN')} ${vl("'Inventory'")}
+           ${kw('ELSE')} ${fn('CAST')}(MODULETYPE ${kw('AS')} varchar(10))
+       ${kw('END AS')} MODULETYPE,
+       TM.DATAAREAID ${kw('AS')} [Company]
+${kw('FROM')} InventTableModule TM
+${kw('JOIN')} INVENTTABLE I ${kw('ON')} TM.ITEMID ${kw('=')} I.ITEMID
+${kw('WHERE')} TM.ITEMID ${kw('=')} ${vl(`'${p}'`)}
+  ${kw('AND')} (${vl(`'${co}'`)} ${kw('=')} ${vl("''")} ${kw('OR')} TM.DATAAREAID ${kw('=')} ${vl(`'${co}'`)})
+${kw('ORDER BY')} TM.DATAAREAID;`;
   }
   // compare
   return `<span style="color:var(--accent)">── QUERY 1 (Staging)</span>

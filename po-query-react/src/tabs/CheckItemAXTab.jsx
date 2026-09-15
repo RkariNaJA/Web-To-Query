@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { getVal } from '../utils';
+import { exportRows } from '../exportExcel';
 
 const COLS = ['ITEM ID','SIZE','COLOR','SEASON','COMPANY'];
 const KEYS = ['ITEMID','INVENTSIZEID','INVENTCOLORID','INVENTSTYLEID','Company'];
@@ -49,6 +50,11 @@ export default function CheckItemAXTab({ rows, po }) {
       <div className="results-meta">
         <span className="results-count">Showing <strong>{filtered.length}</strong> row{filtered.length !== 1 ? 's' : ''} for Item ID <strong>{po}</strong></span>
         <span className="tag tag-item">CHECK ITEM ON AX</span>
+        <button
+          className="export-btn"
+          style={{ marginLeft:'auto' }}
+          onClick={() => exportRows({ cols: COLS, keys: KEYS, rows: filtered, sheet: 'Check Item', file: `PO_Item_${po}` })}
+        >⬇ Export Excel</button>
       </div>
       <div className="table-wrap">
         <table>
