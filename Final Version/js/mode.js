@@ -33,7 +33,7 @@ function updateSQLPreview() {
   const vl = s => `<span class="sql-val">${s}</span>`;
   const fn = s => `<span class="sql-fn">${s}</span>`;
 
-  if (mode === 'search') {
+  if (isStagingSearch()) {
     el.innerHTML = `${kw('SELECT')} ISSELECTED, TRANSFERSTATUS, LINENUMBER, EXECUTIONID,
        PURCHQTY, PURCHPRICE, LINEAMOUNT, PURCHUNIT,
        inventSerialId ${kw('AS')} JOBNUMBER, ITEMID, INVENTSIZEID,

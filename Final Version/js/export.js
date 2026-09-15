@@ -18,7 +18,7 @@ function exportToExcel() {
   const modeLabel = {
     search: 'Search', list: 'ErrorPO', count: 'POLine_AX', update: 'PackRoll',
     packroll: 'QtyPackRoll', compare: 'Compare_Stg_AX', check: 'BotPO',
-    searchdbc: 'SearchDBC', comparedbc: 'Compare_Stg_DBC'
+    searchdbc: 'SearchDBC', comparedbc: 'Compare_Stg_DBC', find: 'Find'
   }[mode] || mode;
   const filename = `PO_${modeLabel}_${new Date().toISOString().slice(0, 10)}.xlsx`;
 

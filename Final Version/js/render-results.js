@@ -4,9 +4,10 @@ function renderResults(rows, po, serverTotalQty, serverTotalAmount, raw = {}) {
   const modeInfo = MODES[mode] ?? { label: mode.toUpperCase(), tagClass: 'tag-update', navClass: 'active-update' };
 
   if (rows.length === 0) {
-    const icons = { search: '⊘', list: '✅', count: '⊘', update: '⊘', packroll: '⊘', check: '⊘', item: '⊘', unit: '⊘' };
+    const icons = { search: '⊘', find: '⊘', list: '✅', count: '⊘', update: '⊘', packroll: '⊘', check: '⊘', item: '⊘', unit: '⊘' };
     const msgs = {
       search: `No staging data found for PO <strong>${po}</strong>.`,
+      find: `No staging data found for PO <strong>${po}</strong>.`,
       list: `✅ No errors — all lines transferred successfully for PO <strong>${po}</strong>.`,
       count: `No PO lines found in AX for PO <strong>${po}</strong>.`,
       update: `No Pack/Roll records found for PO <strong>${po}</strong>.`,
@@ -29,7 +30,7 @@ function renderResults(rows, po, serverTotalQty, serverTotalAmount, raw = {}) {
 
   let cols, colKeys;
 
-  if (mode === 'search') {
+  if (isStagingSearch()) {
     cols = ['LINE', 'EXEC ID', 'ITEM ID', 'SIZE', 'COLOR', 'STYLE', 'QTY', 'PRICE', 'AMOUNT', 'JOB NO', 'SITE', 'LOCATION', 'STATUS', 'TRANSFER'];
     colKeys = ['LINENUMBER', 'EXECUTIONID', 'ITEMID', 'INVENTSIZEID', 'INVENTCOLORID', 'INVENTSTYLEID', 'PURCHQTY', 'PURCHPRICE', 'LINEAMOUNT', 'JOBNUMBER', 'INVENTSITEID', 'INVENTLOCATIONID', 'INVENTSTATUSID', 'TRANSFERSTATUS'];
   } else if (mode === 'list') {
@@ -72,7 +73,7 @@ function renderResults(rows, po, serverTotalQty, serverTotalAmount, raw = {}) {
       let val = (origVal !== undefined && origVal !== null && origVal !== '') ? origVal : '—';
 
       if (val !== '—') {
-        if (k === 'PURCHQTY' || k === 'QTY') val = parseFloat(val || 0).toFixed(mode === 'search' || mode === 'count' ? 4 : 0);
+        if (k === 'PURCHQTY' || k === 'QTY') val = parseFloat(val || 0).toFixed(isStagingSearch() || mode === 'count' ? 4 : 0);
         if (k === 'PURCHPRICE' || k === 'Unit Price' || k === 'UNIT_PRICE') val = parseFloat(val || 0).toFixed(5);
         if (k === 'LINEAMOUNT' || k === 'NET_AMOUNT') val = parseFloat(val || 0).toFixed(2);
         if (k === 'Net amount') val = parseFloat(val || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -102,7 +103,7 @@ function renderResults(rows, po, serverTotalQty, serverTotalAmount, raw = {}) {
   }).join('');
 
   let summaryHTML = '';
-  if (mode === 'search') {
+  if (isStagingSearch()) {
     lastSearchRows = rows;
     const totalQty = rows.reduce((s, r) => s + (parseFloat(getVal(r, 'PURCHQTY') || 0) || 0), 0);
     const totalAmt = rows.reduce((s, r) => s + (parseFloat(getVal(r, 'LINEAMOUNT') || 0) || 0), 0);
@@ -398,7 +399,7 @@ function renderResults(rows, po, serverTotalQty, serverTotalAmount, raw = {}) {
     <div class="table-wrap">
       <table>
         <thead><tr>${cols.map(c => `<th>${c}</th>`).join('')}</tr></thead>
-        <tbody id="${mode === 'count' ? 'count-tbody' : mode === 'search' ? 'search-tbody' : mode === 'packroll' ? 'packroll-tbody' : mode === 'item' ? 'item-tbody' : mode === 'unit' ? 'unit-tbody' : mode === 'check' ? 'check-tbody' : ''}">${rows_html}</tbody>
+        <tbody id="${mode === 'count' ? 'count-tbody' : isStagingSearch() ? 'search-tbody' : mode === 'packroll' ? 'packroll-tbody' : mode === 'item' ? 'item-tbody' : mode === 'unit' ? 'unit-tbody' : mode === 'check' ? 'check-tbody' : ''}">${rows_html}</tbody>
       </table>
     </div>`;
 }

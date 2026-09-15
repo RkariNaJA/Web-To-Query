@@ -370,6 +370,11 @@ html[data-theme="space"] .nav-item.active-search {
   box-shadow: inset 2px 0 10px rgba(199, 125, 255, 0.08);
 }
 
+html[data-theme="space"] .nav-item.active-find {
+  background: linear-gradient(90deg, rgba(163, 230, 53, 0.11) 0%, transparent 75%);
+  box-shadow: inset 2px 0 10px rgba(163, 230, 53, 0.06);
+}
+
 html[data-theme="space"] .nav-item.active-list {
   background: linear-gradient(90deg, rgba(255, 107, 157, 0.11) 0%, transparent 75%);
   box-shadow: inset 2px 0 10px rgba(255, 107, 157, 0.06);

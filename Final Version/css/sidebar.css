@@ -48,6 +48,13 @@ aside {
   box-shadow: inset 2px 0 10px rgba(91, 156, 246, 0.08);
 }
 
+.nav-item.active-find {
+  border-left-color: #a3e635;
+  background: linear-gradient(90deg, rgba(163, 230, 53, 0.09) 0%, transparent 75%);
+  color: #a3e635;
+  box-shadow: inset 2px 0 10px rgba(163, 230, 53, 0.06);
+}
+
 .nav-item.active-list {
   border-left-color: var(--red);
   background: linear-gradient(90deg, rgba(255, 107, 114, 0.09) 0%, transparent 75%);

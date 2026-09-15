@@ -49,7 +49,7 @@ async function runQuery() {
       renderCompareDBC(stagingRes.rows, dbcLines, po);
     } else {
       const execId = mode === 'updatestaging' ? document.getElementById('exec-input').value.trim() : null;
-      const { rows, raw } = await fetchQuery(mode, po, execId);
+      const { rows, raw } = await fetchQuery(QUERY_TYPES[mode] || mode, po, execId);
       const serverTotalQty = getVal(raw, 'totalQTY') ?? getVal(raw, 'total_qty') ?? null;
       const serverTotalAmount = getVal(raw, 'totalNetAmount') ?? getVal(raw, 'total_amount') ?? null;
       addHistory(po, mode, mode === 'updatestaging' ? (raw.rowsAffected ?? 0) : rows.length);

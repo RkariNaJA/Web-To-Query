@@ -33,6 +33,11 @@
   box-shadow: 0 0 5px var(--accent);
 }
 
+.history-dot.find {
+  background: #a3e635;
+  box-shadow: 0 0 5px #a3e635;
+}
+
 .history-dot.list {
   background: var(--red);
   box-shadow: 0 0 5px var(--red);

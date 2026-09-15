@@ -186,6 +186,18 @@ html[data-theme="light"] .nav-item.active-search {
   background: linear-gradient(90deg, rgba(45, 122, 239, 0.10) 0%, transparent 75%);
 }
 
+html[data-theme="light"] .nav-item.active-find {
+  background: linear-gradient(90deg, rgba(77, 124, 15, 0.08) 0%, transparent 75%);
+  border-left-color: #4d7c0f;
+  color: #4d7c0f;
+}
+
+html[data-theme="light"] .tag-find {
+  border-color: rgba(77, 124, 15, 0.4);
+  color: #4d7c0f;
+  background: rgba(77, 124, 15, 0.07);
+}
+
 html[data-theme="light"] .nav-item.active-list {
   background: linear-gradient(90deg, rgba(220, 38, 38, 0.08) 0%, transparent 75%);
 }

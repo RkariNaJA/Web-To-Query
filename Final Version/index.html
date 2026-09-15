@@ -65,6 +65,10 @@
         <span class="nav-icon">⌕</span> Search PO (Staging)
         <span class="nav-badge" id="badge-search">—</span>
       </div>
+      <div class="nav-item" id="nav-find" onclick="setMode('find')">
+        <span class="nav-icon">⌖</span> PO-V2 (Stagging)
+        <span class="nav-badge" id="badge-find">—</span>
+      </div>
       <div class="nav-item" id="nav-searchdbc" onclick="setMode('searchdbc')">
         <span class="nav-icon">&#9672;</span> Search PO DBC
         <span class="nav-badge" id="badge-searchdbc">&#8212;</span>
@@ -205,12 +209,13 @@
       </div>
       <div class="config-note">
         Sends <code>POST</code> →
-        <code>{ "queryType": "search|searchdbc|list|count|update|packroll|compare|comparedbc|check|updatestaging", "searchKeyword": "PO" }</code><br><br>
+        <code>{ "queryType": "search|Find|searchdbc|list|count|update|packroll|compare|comparedbc|check|updatestaging", "searchKeyword": "PO" }</code><br><br>
         <b>search</b> = Staging PO &nbsp;|&nbsp; <b>searchdbc</b> = DBC PO &nbsp;|&nbsp; <b>list</b> = Error PO
         &nbsp;|&nbsp; <b>count</b> = PO Line AX<br>
         <b>update</b> = Pack/Roll &nbsp;|&nbsp; <b>packroll</b> = QTY Pack/Roll &nbsp;|&nbsp; <b>compare</b> = Stg vs AX
         &nbsp;|&nbsp; <b>comparedbc</b> = Stg vs DBC (both parallel)<br>
-        <b>check</b> = BotPO Checking &nbsp;|&nbsp; <b>updatestaging</b> = Update Staging Status
+        <b>check</b> = BotPO Checking &nbsp;|&nbsp; <b>updatestaging</b> = Update Staging Status<br>
+        <b>Find</b> = PO-V2 (Stagging) — its own n8n branch, same columns as <b>search</b>
       </div>
       <button class="save-btn" onclick="saveConfig()">Save & Close</button>
     </div>

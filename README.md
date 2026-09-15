@@ -1,6 +1,6 @@
 # Web-To-Query
 
-**One page, twelve query modes, three databases — and the browser never holds a credential or builds a line of SQL.**
+**One page, thirteen query modes, three databases — and the browser never holds a credential or builds a line of SQL.**
 
 <p>
   <img alt="Vanilla JavaScript, no bundler" src="https://img.shields.io/badge/JavaScript-vanilla%2C%20no%20bundler-F7DF1E?logo=javascript&logoColor=black">
@@ -25,8 +25,9 @@ browser  →  { queryType, searchKeyword }  →  one n8n webhook  →  MSSQL (St
 
 <sub>**BotPO Checking** on real data — execution IDs, PO numbers, item IDs, colour codes, seasons and
 the query history are blurred, and so is the SQL body, because it carries internal D365 schema. What
-it shows: the twelve modes down the left with a live row count each, the read-only **SQL preview** of
-the query n8n will run, the PO and Item ID filters, and Export Excel.</sub>
+it shows: the query modes down the left with a live row count each, the read-only **SQL preview** of
+the query n8n will run, the PO and Item ID filters, and Export Excel. <em>(Screenshot predates
+**PO-V2 (Stagging)**, so twelve modes are visible rather than thirteen.)</em></sub>
 
 ---
 
@@ -49,11 +50,11 @@ already allows.
 
 ---
 
-## The twelve modes
+## The thirteen modes
 
 | Group | Modes |
 |---|---|
-| **Look up a PO** | Search PO (Staging) · Search PO DBC · PO Line (AX) · Error PO |
+| **Look up a PO** | Search PO (Staging) · PO-V2 (Stagging) · Search PO DBC · PO Line (AX) · Error PO |
 | **Check master data on AX** | Check Item On AX · Check Unit On AX |
 | **Pack / roll** | Pack / Roll · QTY Pack/Roll |
 | **Compare across systems** | Compare Stg vs PO AX · Compare Stg vs PO DBC — *two queries in parallel, rendered side by side with ✓ Match / Δ badges* |
@@ -61,6 +62,17 @@ already allows.
 
 Each mode maps to a `queryType` that n8n switches on; adding one is a table entry plus a nav item,
 not a new page.
+
+**PO-V2 (Stagging)** is the newest of them: a second staging lookup that reads the same columns as
+Search PO (Staging) but posts `queryType: "Find"`, so n8n routes it down its own branch. Two modes
+may render identically and still be different questions — what separates them is the `queryType`,
+which is the only thing the webhook sees. Give two modes the same one and n8n cannot tell them
+apart; both land in whichever branch matches first.
+
+A mode's key and its wire value do not have to match. `QUERY_TYPES` in
+[`js/core.js`](Final%20Version/js/core.js) maps the ones that differ — mode `find` posts `Find` —
+so internal keys stay lowercase like every other mode while the payload keeps the exact spelling the
+n8n Switch expects.
 
 ---
 
@@ -115,9 +127,9 @@ npm install && npm run dev
 | | |
 |---|---|
 | **The app** | [`Final Version/`](Final%20Version) — plain JS, 14 modules loaded as ordinary scripts (no bundler, no imports), 12 stylesheets |
-| **Dispatch** | [`js/core.js`](Final%20Version/js/core.js) holds the `MODES` table · [`js/query.js`](Final%20Version/js/query.js) runs each mode, including the two parallel compares |
+| **Dispatch** | [`js/core.js`](Final%20Version/js/core.js) holds the `MODES` table, the `QUERY_TYPES` overrides and `isStagingSearch()` · [`js/query.js`](Final%20Version/js/query.js) runs each mode, including the two parallel compares |
 | **Transport** | [`js/utils.js`](Final%20Version/js/utils.js) — `fetchQuery()` builds the request body and throws on non-2xx |
-| **Renderers** | one per shape: results, DBC header+lines, Staging vs AX, Staging vs DBC |
+| **Renderers** | one per shape: results, DBC header+lines, Staging vs AX, Staging vs DBC — modes that share a shape share a renderer, so `find` reuses everything `search` draws, down to the `#search-tbody` its filters target |
 | **React port** | [`po-query-react/`](po-query-react) — React 19 + Vite 8 |
 
 ---
@@ -125,9 +137,11 @@ npm install && npm run dev
 ## Documentation
 
 **[docs/DEVELOPER-GUIDE.md](docs/DEVELOPER-GUIDE.md)** — the full guide: the file layout module by
-module, all twelve modes with the exact `queryType` each sends, the request body and which modes add
-extra fields, the one non-flat response shape, the `localStorage` keys, and the four places to touch
-when adding a mode.
+module, every mode with the exact `queryType` each sends, the request body and which modes add extra
+fields, the one non-flat response shape, the `localStorage` keys, and the four places to touch when
+adding a mode.
+
+> ⚠️ The guide has not been updated for **PO-V2 (Stagging)** yet — its mode table still lists twelve.
 
 ---
 
