@@ -27,7 +27,7 @@ browser  →  { queryType, searchKeyword }  →  one n8n webhook  →  MSSQL (St
 the query history are blurred, and so is the SQL body, because it carries internal D365 schema. What
 it shows: the query modes down the left with a live row count each, the read-only **SQL preview** of
 the query n8n will run, the PO and Item ID filters, and Export Excel. <em>(Screenshot predates
-**PO-V2 (Stagging)**, so twelve modes are visible rather than thirteen.)</em></sub>
+**Search PO (Staging)**, so twelve modes are visible rather than thirteen.)</em></sub>
 
 ---
 
@@ -54,7 +54,7 @@ already allows.
 
 | Group | Modes |
 |---|---|
-| **Look up a PO** | Search PO (Staging) · PO-V2 (Stagging) · Search PO DBC · PO Line (AX) · Error PO |
+| **Look up a PO** | Search BotPO (Staging) · Search PO (Staging) · Search PO DBC · PO Line (AX) · Error PO |
 | **Check master data on AX** | Check Item On AX · Check Unit On AX |
 | **Pack / roll** | Pack / Roll · QTY Pack/Roll |
 | **Compare across systems** | Compare Stg vs PO AX · Compare Stg vs PO DBC — *two queries in parallel, rendered side by side with ✓ Match / Δ badges* |
@@ -63,13 +63,13 @@ already allows.
 Each mode maps to a `queryType` that n8n switches on; adding one is a table entry plus a nav item,
 not a new page.
 
-**PO-V2 (Stagging)** is the newest of them: a second staging lookup that reads the same columns as
-Search PO (Staging) but posts `queryType: "Find"`, so n8n routes it down its own branch. Two modes
-may render identically and still be different questions — what separates them is the `queryType`,
-which is the only thing the webhook sees. Give two modes the same one and n8n cannot tell them
-apart; both land in whichever branch matches first.
+The two staging lookups are the clearest illustration. **Search BotPO (Staging)** and **Search PO
+(Staging)** read the same columns from the same table and draw the same fourteen-column result — what
+makes them different questions is the `queryType` they post, which is the only thing the webhook
+sees. Give two modes the same one and n8n cannot tell them apart; both land in whichever branch
+matches first.
 
-A mode's key and its wire value do not have to match. `QUERY_TYPES` in
+A mode's key and its wire value need not match. `QUERY_TYPES` in
 [`js/core.js`](Final%20Version/js/core.js) maps the ones that differ — mode `find` posts `Find` —
 so internal keys stay lowercase like every other mode while the payload keeps the exact spelling the
 n8n Switch expects.
@@ -80,14 +80,15 @@ n8n Switch expects.
 
 - **Per-column filters** on the wide result sets, with the summary cards recalculating live as you
   filter.
-- **Paste a whole list of POs to filter by** — the BotPO summary's PO filter takes them
-  comma-separated (spaces, semicolons and newlines work too), and the card, its PO list and its
-  export all narrow together.
+- **Paste a whole list to filter by** — every filter box in the BotPO summary takes values
+  comma-separated (spaces, semicolons and newlines work too). PO Summary filters by **PO and by
+  item**, so you can ask which POs carry one item; Item Summary filters by item. Each card's count,
+  its PO list and its export all narrow together.
 - **Excel export** of exactly what the table shows — filters and column choices included, not the
-  raw response. The BotPO summary adds two of its own, each exporting only what its card's filter
-  currently matches: **Item Summary**, one deduplicated row per item, and **PO Summary**, one row per
+  raw response. The BotPO summary adds two of its own, each exporting only what its card's filters
+  currently match: **Item Summary**, one deduplicated row per item, and **PO Summary**, one row per
   item *per season per colour*, with that row's POs and sizes comma-joined into a cell each — so a
-  row splits only where a value genuinely differs.
+  row splits only where a value genuinely differs. Both carry the colour code and its name.
 - **Query history**, kept client-side, so re-running yesterday's check is one click.
 - **Three themes** — dark, light and `space` — set on `data-theme` and remembered.
 - **Full-error popup** for rows whose error text is far too long for a cell.
@@ -139,11 +140,10 @@ npm install && npm run dev
 ## Documentation
 
 **[docs/DEVELOPER-GUIDE.md](docs/DEVELOPER-GUIDE.md)** — the full guide: the file layout module by
-module, every mode with the exact `queryType` each sends, the request body and which modes add extra
-fields, the one non-flat response shape, the `localStorage` keys, and the four places to touch when
-adding a mode.
-
-> ⚠️ The guide has not been updated for **PO-V2 (Stagging)** yet — its mode table still lists twelve.
+module, every mode with the exact `queryType` each sends and why a mode key is not always its
+`queryType`, the request body and which modes add extra fields, the one non-flat response shape, the
+summary windows and their filters, the `localStorage` keys, and the places to touch when adding a
+mode.
 
 ---
 

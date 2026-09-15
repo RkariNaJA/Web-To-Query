@@ -48,8 +48,8 @@ let cfg = {
 };
 
 const MODES = {
-  search: { label: 'SEARCH PO (STAGING)', tagClass: 'tag-search', navClass: 'active-search' },
-  find: { label: 'PO-V2 (STAGGING)', tagClass: 'tag-find', navClass: 'active-find' },
+  search: { label: 'SEARCH BOTPO (STAGING)', tagClass: 'tag-search', navClass: 'active-search' },
+  find: { label: 'SEARCH PO (STAGING)', tagClass: 'tag-find', navClass: 'active-find' },
   list: { label: 'ERROR PO', tagClass: 'tag-list', navClass: 'active-list' },
   count: { label: 'PO LINE (AX)', tagClass: 'tag-count', navClass: 'active-count' },
   update: { label: 'PACK / ROLL', tagClass: 'tag-update', navClass: 'active-update' },

@@ -1,6 +1,6 @@
 export const MODES = {
-  search:        { label: 'SEARCH PO (STAGING)',    tagClass: 'tag-search',        navClass: 'active-search' },
-  find:          { label: 'PO-V2 (STAGGING)',        tagClass: 'tag-find',          navClass: 'active-find' },
+  search:        { label: 'SEARCH BOTPO (STAGING)', tagClass: 'tag-search',        navClass: 'active-search' },
+  find:          { label: 'SEARCH PO (STAGING)',     tagClass: 'tag-find',          navClass: 'active-find' },
   list:          { label: 'ERROR PO',               tagClass: 'tag-list',          navClass: 'active-list' },
   count:         { label: 'PO LINE (AX)',            tagClass: 'tag-count',         navClass: 'active-count' },
   update:        { label: 'PACK / ROLL',             tagClass: 'tag-update',        navClass: 'active-update' },
@@ -28,8 +28,8 @@ export function isStagingSearch(m) {
 
 export const NAV_ITEMS = [
   { section: 'STAGING' },
-  { id: 'search',        icon: '⌕',  label: 'Search PO (Staging)' },
-  { id: 'find',          icon: '⌖',  label: 'PO-V2 (Stagging)' },
+  { id: 'search',        icon: '⌕',  label: 'Search BotPO (Staging)' },
+  { id: 'find',          icon: '⌖',  label: 'Search PO (Staging)' },
   { id: 'list',          icon: '⚠',  label: 'Error PO' },
   { id: 'count',         icon: '≡',  label: 'PO Line (AX)' },
   { id: 'update',        icon: '⬡',  label: 'Pack / Roll' },

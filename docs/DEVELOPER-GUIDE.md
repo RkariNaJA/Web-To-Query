@@ -1,6 +1,6 @@
 # Web-To-Query — Developer Guide
 
-> The technical guide: the file layout, all twelve modes and the `queryType` contract, the
+> The technical guide: the file layout, all thirteen modes and the `queryType` contract, the
 > request body per mode, the localStorage keys, and what to touch when adding a mode. For a
 > short overview of what this is, see the **[README](../README.md)**.
 
@@ -39,7 +39,7 @@ Web-To-Query/
 ├─ Final Version/        ★ the app in use — plain JS, no bundler
 │  ├─ index.html            markup + the sidebar that defines mode order
 │  ├─ js/                   14 modules, loaded as plain scripts (no imports)
-│  │  ├─ core.js               MODES table, theme switching, shared state
+│  │  ├─ core.js               MODES table, QUERY_TYPES, theme switching, shared state
 │  │  ├─ init.js               boot; restores the last mode from localStorage
 │  │  ├─ config.js             webhook + auth settings, persisted to localStorage
 │  │  ├─ mode.js               per-mode query-bar layout and field labels
@@ -55,7 +55,8 @@ Web-To-Query/
 │  │  └─ reports.js            full-error popup + the Error / Unit / BotPO summary windows
 │  ├─ css/                  12 stylesheets, one per area + three themes
 │  └─ Version 1/            an earlier snapshot of this app
-├─ po-query-react/       React + Vite port (see caveat below)
+├─ po-query-react/       React + Vite port, at feature parity
+│  └─ src/reports/index.js  the same reports.js, synced by hand (see Notes)
 ├─ Version/              standalone HTML prototypes, V1.2 → V3
 ├─ README.md            GitHub landing page: what the tool does, for anyone
 └─ docs/DEVELOPER-GUIDE.md  this file
@@ -65,25 +66,42 @@ Web-To-Query/
 
 ## Modes
 
-Twelve, in sidebar order. `queryType` is what n8n receives and switches on.
+Thirteen, in sidebar order. `queryType` is what n8n receives and switches on.
 
 | # | Mode key | Sidebar label | `queryType` sent |
 | - | -------- | ------------- | ---------------- |
-| 1 | `search` | Search PO (Staging) | `search` |
-| 2 | `searchdbc` | Search PO DBC | `searchdbc` |
-| 3 | `list` | Error PO | `list` |
-| 4 | `count` | PO Line (AX) | `count` |
-| 5 | `item` | Check Item On AX | `item` |
-| 6 | `unit` | Check Unit On AX | `unit` |
-| 7 | `update` | Pack / Roll | `update` |
-| 8 | `packroll` | QTY Pack/Roll | `packroll` |
-| 9 | `compare` | Compare Stg vs AX | **two calls:** `search` + `count` |
-| 10 | `comparedbc` | Compare Stg vs DBC | **two calls:** `search` + `searchdbc` |
-| 11 | `check` | BotPO Checking | `check` |
-| 12 | `updatestaging` | Update Staging Status | `updatestaging` |
+| 1 | `search` | Search BotPO (Staging) | `search` |
+| 2 | `find` | Search PO (Staging) | **`Find`** — not the mode key |
+| 3 | `searchdbc` | Search PO DBC | `searchdbc` |
+| 4 | `list` | Error PO | `list` |
+| 5 | `count` | PO Line (AX) | `count` |
+| 6 | `item` | Check Item On AX | `item` |
+| 7 | `unit` | Check Unit On AX | `unit` |
+| 8 | `update` | Pack / Roll | `update` |
+| 9 | `packroll` | QTY Pack/Roll | `packroll` |
+| 10 | `compare` | Compare PO Stg vs PO AX | **two calls:** `search` + `count` |
+| 11 | `comparedbc` | Compare PO Stg vs PO DBC | **two calls:** `search` + `searchdbc` |
+| 12 | `check` | BotPO Checking | `check` |
+| 13 | `updatestaging` | Update Staging Status | `updatestaging` |
 
 The two **compare** modes are the only ones that fire more than one request; both run in parallel and
-render once both resolve. For every other mode the `queryType` is the mode key verbatim.
+render once both resolve.
+
+### A mode key is not always its `queryType`
+
+`queryType` is the **only** thing the webhook sees, so it is what separates two modes that look alike.
+`search` and `find` query the same staging table and render through the same code; what makes them
+different questions is the value they post.
+
+`QUERY_TYPES` in `js/core.js` maps the modes whose wire value differs from their key, and
+`js/query.js` sends `QUERY_TYPES[mode] || mode`. Today it holds one entry — `find` posts `Find`,
+capital F, because that is what its n8n Switch branch matches on. The key stays lowercase so element
+ids and CSS classes (`nav-find`, `.tag-find`, `.history-dot.find`) follow the same shape as every
+other mode.
+
+> ⚠️ **Never give two modes the same `queryType`.** n8n cannot tell them apart and routes both to
+> whichever branch matches first, so the second tab silently returns the first one's data. `find`
+> shipped posting `search` and did exactly that until it was given its own value.
 
 ### Request body
 
@@ -121,20 +139,43 @@ built as one big template literal and handed to a `window.open()` document. They
 pages: their own `<style>`, their own copy of the data inlined as JSON, and their own filter and
 render functions. Nothing from `js/` is in scope inside them.
 
-`showCheckSummary` (BotPO Checking → **Error Summarize**) carries two cards, each with a filter and
-an Excel export that follows that filter:
+`showCheckSummary` (BotPO Checking → **Error Summarize**) carries two cards, each with its own
+filters and an Excel export that follows them:
 
-| Card | Filter | Export |
-| ---- | ------ | ------ |
-| ITEM SUMMARY | substring on item | one row per item: `ITEM, Color, SIZE, SEASON` |
-| PO SUMMARY | **many POs at once** — `poTerms()` splits the box on commas, semicolons and whitespace, then a PO matches if it contains *any* term | one row per **item + season + colour**: `ITEM, PO, Color, SIZE, SEASON`, with PO and SIZE comma-joined and deduplicated inside the row |
+| Card | Filters | Export |
+| ---- | ------- | ------ |
+| ITEM SUMMARY | **Item** | one row per item: `ITEM, Color, Color Name, SIZE, SEASON` |
+| PO SUMMARY | **PO** and **Item** | one row per **item + season + colour**: `ITEM, PO, Color, Color Name, SIZE, SEASON`, with PO and SIZE comma-joined and deduplicated inside the row |
+
+Every filter box takes **many values at once**: `poTerms()` splits on commas, semicolons and
+whitespace, and a value matches if it contains *any* term. Both cards render their count live
+(`2 items of 3`) and both clear buttons reset every box in their card.
+
+⚠️ The PO Summary's item box is `#f-po-sum-item`, **not** `#f-item-sum` — that id belongs to the
+ITEM SUMMARY filter directly above it. Because two boxes now drive one card, `renderPoSummary()` and
+`renderItemSummary()` take **no arguments** and read their inputs from the DOM; passing a filter in
+would only ever carry one of them.
+
+### Colour name
+
+`Color Name` comes from **`IVZ_ColorDesc_CT`**, collected per group alongside sizes and colours.
+
+> 🔴 **It is not in the BotPO payload today.** The `check` query selects nine columns from
+> `DMFPURCHLINEENTITY` and none of them is a colour description, so the column renders `-` until the
+> n8n query adds it. Worth confirming whether `IVZ_ColorDesc_CT` is on `DMFPURCHLINEENTITY` or only
+> on `PURCHLINE` — if the latter, the query needs a join, not just an extra field.
+
+It is a **display field, never a grouping key**. Adding it to the key would split rows that the
+colour id already groups together the moment one colour carried two spellings of its name.
 
 Two things about the PO Summary export are easy to get wrong:
 
 - It reads **`ALL_ROWS`, not `PO_DATA`**. `PO_DATA` rolls colours, sizes and seasons up per PO, so a
   colour can no longer be traced back to one season — grouping by item + season + colour needs the
-  raw rows. The grouping key is `item||season||colour`; only PO and SIZE are joined within a group,
-  and a missing colour or season becomes `-`.
+  raw rows. The grouping key is `item||season||colour`; PO, SIZE and Color Name are joined within a
+  group, and a missing value becomes `-`.
+- It keeps rows by **PO *and* item** (`keep[po+'||'+item]`), not by PO alone. Filtering by item would
+  otherwise export every item on a matching PO, including the ones filtered off screen.
 - The card's header count and its red `PO: …` strip are **not static**. `renderPoSummary()` rewrites
   both, so they always show the filtered set.
 
@@ -162,9 +203,17 @@ carries no credentials at all.
 
 ## Notes
 
-- ⚠️ **The React port lags by one mode.** `Final Version` has all twelve; `po-query-react` has eleven
-  — `unit` (Check Unit On AX) was added to the vanilla app afterwards and never ported. Treat
-  `Final Version` as the source of truth.
+- **The React port is at feature parity** — all thirteen modes, the same filters, exports and report
+  windows. Treat `Final Version` as the source of truth anyway: it is the one in daily use, and it is
+  where changes land first.
+- ⚠️ **`js/reports.js` and `po-query-react/src/reports/index.js` are the same file, synced by hand.**
+  The React copy is the vanilla one with the four functions taking a `rows` parameter instead of
+  reading a global, plus an import and a file-scoped `eslint-disable`. Change a report in one and
+  port it to the other, or the two apps drift apart silently — nothing checks this.
+- ⚠️ **Renaming a tab means editing two places.** The sidebar label lives in `index.html`; the tag
+  drawn on the results header lives in the `MODES` table in `js/core.js`. Change one and the app
+  calls the same mode two different names. The React port keeps both in `src/constants.js`
+  (`NAV_ITEMS` and `MODES`) and a third copy in `SearchTab.jsx`.
 - `js/` modules are **plain scripts, not ES modules** — they share globals and depend on the load
   order in `index.html`. Adding a file means adding a `<script>` tag.
 - ⚠️ **Backslash escapes die inside the summary popups.** Their code lives in a template literal, so

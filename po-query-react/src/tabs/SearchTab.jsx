@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import * as XLSX from 'xlsx';
 import { getVal, fmt } from '../utils';
+import { MODES } from '../constants';
 
 function TransferBadge({ val }) {
   const v = parseInt(val);
@@ -12,11 +13,11 @@ function TransferBadge({ val }) {
 const COLS = ['LINE','EXEC ID','ITEM ID','SIZE','COLOR','STYLE','QTY','PRICE','AMOUNT','JOB NO','SITE','LOCATION','STATUS','TRANSFER'];
 const KEYS = ['LINENUMBER','EXECUTIONID','ITEMID','INVENTSIZEID','INVENTCOLORID','INVENTSTYLEID','PURCHQTY','PURCHPRICE','LINEAMOUNT','JOBNUMBER','INVENTSITEID','INVENTLOCATIONID','INVENTSTATUSID','TRANSFERSTATUS'];
 
-// Shared by `search` and `find` (PO-V2) — same columns, summary and filters;
-// only the tag differs, because the two tabs ask different n8n branches.
+// Shared by `search` and `find` — same columns, summary and filters; only the
+// tag differs, because the two tabs ask different n8n branches. The tag is read
+// from MODES rather than spelled out here, so renaming a mode is a one-place edit.
 export default function SearchTab({ rows, po, mode = 'search' }) {
-  const tagClass = mode === 'find' ? 'tag-find' : 'tag-search';
-  const tagLabel = mode === 'find' ? 'PO-V2 (STAGGING)' : 'SEARCH PO (STAGING)';
+  const { tagClass, label: tagLabel } = MODES[mode] ?? MODES.search;
   const [fColor,  setFColor]  = useState('');
   const [fSize,   setFSize]   = useState('');
   const [fSeason, setFSeason] = useState('');

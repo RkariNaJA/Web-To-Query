@@ -13,6 +13,7 @@
 // SheetJS from CDN, so nothing here depends on the React bundle.
 // Keep in sync with `Final Version/js/reports.js`.
 import { getVal } from '../utils';
+
 // ── Show Full Error ────────────────────────────────────────────────
 export function showFullError(rows) {
   if (!rows.length) return;
@@ -635,14 +636,16 @@ export function showCheckSummary(rows) {
   const selStyle = `background:#1a1e28;border:1px solid #3a4258;color:#e2e6f0;font-family:'IBM Plex Mono',monospace;font-size:11px;padding:5px 8px;border-radius:6px;cursor:pointer;min-width:120px;`;
   const lblStyle = `font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6b7494;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px;`;
 
-  // Build per-item summary (sizes / colors / seasons)
+  // Build per-item summary (sizes / colors / color names / seasons)
   const itemSummaryMap = {};
   rows.forEach(r => {
     const item = getVal(r, 'ITEMID') || '(unknown)';
-    if (!itemSummaryMap[item]) itemSummaryMap[item] = { sizes: new Set(), colors: new Set(), seasons: new Set() };
+    if (!itemSummaryMap[item]) itemSummaryMap[item] = { sizes: new Set(), colors: new Set(), colorNames: new Set(), seasons: new Set() };
     const sz = getVal(r, 'INVENTSIZEID'); if (sz && sz !== '—') itemSummaryMap[item].sizes.add(sz);
     const cl = getVal(r, 'INVENTCOLORID'); if (cl && cl !== '—') itemSummaryMap[item].colors.add(cl);
     const se = getVal(r, 'INVENTSEASONID'); if (se && se !== '—') itemSummaryMap[item].seasons.add(se);
+    // Colour description — absent from the BotPO query today, so renders '-'.
+    const cn = getVal(r, 'IVZ_ColorDesc_CT'); if (cn && cn !== '—') itemSummaryMap[item].colorNames.add(cn);
   });
 
   const joinOrDash = set => set.size ? [...set].sort().join(', ') : '-';
@@ -655,18 +658,21 @@ export function showCheckSummary(rows) {
     const exec = getVal(r, 'EXECUTIONID');
     if (!poSummaryMap[po]) poSummaryMap[po] = { execs: new Set(), items: {} };
     if (exec && exec !== '—') poSummaryMap[po].execs.add(exec);
-    if (!poSummaryMap[po].items[item]) poSummaryMap[po].items[item] = { count: 0, sizes: new Set(), colors: new Set(), seasons: new Set() };
+    if (!poSummaryMap[po].items[item]) poSummaryMap[po].items[item] = { count: 0, sizes: new Set(), colors: new Set(), colorNames: new Set(), seasons: new Set() };
     poSummaryMap[po].items[item].count++;
     const sz = getVal(r, 'INVENTSIZEID'); if (sz && sz !== '—') poSummaryMap[po].items[item].sizes.add(sz);
     const cl = getVal(r, 'INVENTCOLORID'); if (cl && cl !== '—') poSummaryMap[po].items[item].colors.add(cl);
     const se = getVal(r, 'INVENTSEASONID'); if (se && se !== '—') poSummaryMap[po].items[item].seasons.add(se);
+    // Colour description. Not in the BotPO query's SELECT today, so this stays
+    // empty and renders '-' until n8n adds IVZ_ColorDesc_CT to it.
+    const cn = getVal(r, 'IVZ_ColorDesc_CT'); if (cn && cn !== '—') poSummaryMap[po].items[item].colorNames.add(cn);
   });
 
   const totalPOs = Object.keys(poSummaryMap).length;
   const allPOsStr = Object.keys(poSummaryMap).sort().join(',');
 
-  const poSummaryData = Object.entries(poSummaryMap).sort(([a], [b]) => a.localeCompare(b)).map(([po, { execs, items }]) => ({ po, execs: [...execs].sort(), items: Object.entries(items).sort(([a], [b]) => a.localeCompare(b)).map(([item, { count, sizes, colors, seasons }]) => ({ item, count, sizes: [...sizes].sort(), colors: [...colors].sort(), seasons: [...seasons].sort() })) }));
-  const itemSummaryData = Object.entries(itemSummaryMap).sort(([a], [b]) => a.localeCompare(b)).map(([item, { sizes, colors, seasons }]) => ({ item, sizes: [...sizes].sort(), colors: [...colors].sort(), seasons: [...seasons].sort() }));
+  const poSummaryData = Object.entries(poSummaryMap).sort(([a], [b]) => a.localeCompare(b)).map(([po, { execs, items }]) => ({ po, execs: [...execs].sort(), items: Object.entries(items).sort(([a], [b]) => a.localeCompare(b)).map(([item, { count, sizes, colors, colorNames, seasons }]) => ({ item, count, sizes: [...sizes].sort(), colors: [...colors].sort(), colorNames: [...colorNames].sort(), seasons: [...seasons].sort() })) }));
+  const itemSummaryData = Object.entries(itemSummaryMap).sort(([a], [b]) => a.localeCompare(b)).map(([item, { sizes, colors, colorNames, seasons }]) => ({ item, sizes: [...sizes].sort(), colors: [...colors].sort(), colorNames: [...colorNames].sort(), seasons: [...seasons].sort() }));
 
   const poSummaryBar = `
     <div style="border:1px solid #252a38;border-radius:8px;margin-bottom:20px;overflow:hidden;">
@@ -682,8 +688,10 @@ export function showCheckSummary(rows) {
       </div>
       <div style="display:flex;align-items:center;gap:8px;padding:8px 14px;background:#13161d;border-bottom:1px solid #252a38;" onclick="event.stopPropagation()">
         <span style="${lblStyle}">Filter PO</span>
-        <input id="f-po-sum" oninput="renderPoSummary(this.value)" placeholder="Type PO to filter (comma-separated for multiple)..." style="${selStyle}flex:1 1 160px;" autocomplete="off" spellcheck="false"/>
-        <button onclick="document.getElementById('f-po-sum').value='';renderPoSummary('');" style="padding:5px 10px;background:#0d0f14;border:1px solid #3a4258;color:#6b7494;font-family:'IBM Plex Mono',monospace;font-size:11px;border-radius:6px;cursor:pointer;">✕</button>
+        <input id="f-po-sum" oninput="renderPoSummary()" placeholder="Type PO to filter (comma-separated for multiple)..." style="${selStyle}flex:1 1 160px;" autocomplete="off" spellcheck="false"/>
+        <span style="${lblStyle}">Filter Item</span>
+        <input id="f-po-sum-item" oninput="renderPoSummary()" placeholder="Type item to filter (comma-separated for multiple)..." style="${selStyle}flex:1 1 160px;" autocomplete="off" spellcheck="false"/>
+        <button onclick="document.getElementById('f-po-sum').value='';document.getElementById('f-po-sum-item').value='';renderPoSummary();" style="padding:5px 10px;background:#0d0f14;border:1px solid #3a4258;color:#6b7494;font-family:'IBM Plex Mono',monospace;font-size:11px;border-radius:6px;cursor:pointer;">✕</button>
       </div>
       <div id="po-sum-body" style="max-height:320px;overflow-y:auto;background:#0d0f14;"></div>
     </div>`;
@@ -691,7 +699,7 @@ export function showCheckSummary(rows) {
   const itemSummaryBar = `
     <div style="border:1px solid #252a38;border-radius:8px;margin-bottom:20px;overflow:hidden;">
       <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#13161d;border-bottom:1px solid #252a38;cursor:pointer;user-select:none;" onclick="const b=document.getElementById('item-sum-body');const ic=document.getElementById('item-sum-ic');b.style.display=b.style.display==='none'?'block':'none';ic.textContent=b.style.display==='none'?'▶':'▼';">
-        <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:#3ecf8e;letter-spacing:0.06em;">ITEM SUMMARY &nbsp;<span style="color:#6b7494;font-weight:400;">${Object.keys(itemSummaryMap).length} item${Object.keys(itemSummaryMap).length !== 1 ? 's' : ''}</span></span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:#3ecf8e;letter-spacing:0.06em;">ITEM SUMMARY &nbsp;<span id="item-sum-count" style="color:#6b7494;font-weight:400;">${Object.keys(itemSummaryMap).length} item${Object.keys(itemSummaryMap).length !== 1 ? 's' : ''}</span></span>
         <span style="display:flex;align-items:center;gap:10px;">
           <button onclick="event.stopPropagation();exportItemSummary();" title="Export ITEM SUMMARY to Excel" style="padding:4px 10px;background:#1a1e28;border:1px solid #3a4258;color:#3ecf8e;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.05em;border-radius:5px;cursor:pointer;">⤓ EXPORT EXCEL</button>
           <span id="item-sum-ic" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6b7494;">▼</span>
@@ -699,8 +707,8 @@ export function showCheckSummary(rows) {
       </div>
       <div style="display:flex;align-items:center;gap:8px;padding:8px 14px;background:#13161d;border-bottom:1px solid #252a38;" onclick="event.stopPropagation()">
         <span style="${lblStyle}">Filter Item</span>
-        <input id="f-item-sum" oninput="renderItemSummary(this.value)" placeholder="Type item to filter..." style="${selStyle}flex:1 1 160px;" autocomplete="off" spellcheck="false"/>
-        <button onclick="document.getElementById('f-item-sum').value='';renderItemSummary('');" style="padding:5px 10px;background:#0d0f14;border:1px solid #3a4258;color:#6b7494;font-family:'IBM Plex Mono',monospace;font-size:11px;border-radius:6px;cursor:pointer;">✕</button>
+        <input id="f-item-sum" oninput="renderItemSummary()" placeholder="Type item to filter (comma-separated for multiple)..." style="${selStyle}flex:1 1 160px;" autocomplete="off" spellcheck="false"/>
+        <button onclick="document.getElementById('f-item-sum').value='';renderItemSummary();" style="padding:5px 10px;background:#0d0f14;border:1px solid #3a4258;color:#6b7494;font-family:'IBM Plex Mono',monospace;font-size:11px;border-radius:6px;cursor:pointer;">✕</button>
       </div>
       <div id="item-sum-body" style="max-height:220px;overflow-y:auto;background:#0d0f14;"></div>
     </div>`;
@@ -800,17 +808,33 @@ export function showCheckSummary(rows) {
       return (filter||'').toLowerCase().split(/[\\s,;]+/).map(function(t){return t.trim();}).filter(Boolean);
     }
 
-    function matchPoData(filter){
+    function poFilterValue(){var el=document.getElementById('f-po-sum');return (el&&el.value)||'';}
+    function itemFilterValue(){var el=document.getElementById('f-po-sum-item');return (el&&el.value)||'';}
+
+    // Narrows POs by name and their items by item id. A PO whose items all fail
+    // the item filter drops out, so filtering by item shows only the POs carrying it.
+    function matchPoData(filter,itemFilter){
       var terms=poTerms(filter);
-      if(!terms.length) return PO_DATA.slice();
-      return PO_DATA.filter(function(d){
-        var po=d.po.toLowerCase();
-        return terms.some(function(t){return po.includes(t);});
-      });
+      var itemTerms=poTerms(itemFilter);
+      var data=PO_DATA;
+      if(terms.length){
+        data=data.filter(function(d){
+          var po=d.po.toLowerCase();
+          return terms.some(function(t){return po.includes(t);});
+        });
+      }
+      if(!itemTerms.length) return data.slice();
+      return data.map(function(d){
+        var items=d.items.filter(function(it){
+          var item=String(it.item).toLowerCase();
+          return itemTerms.some(function(t){return item.includes(t);});
+        });
+        return {po:d.po,execs:d.execs,items:items};
+      }).filter(function(d){return d.items.length;});
     }
 
-    function renderPoSummary(filter){
-      var data=matchPoData(filter);
+    function renderPoSummary(){
+      var data=matchPoData(poFilterValue(),itemFilterValue());
       var cnt=document.getElementById('po-sum-count');
       if(cnt)cnt.textContent=data.length+' PO'+(data.length!==1?'s':'')+(data.length!==PO_DATA.length?' of '+PO_DATA.length:'');
       var lst=document.getElementById('po-sum-list');
@@ -824,6 +848,7 @@ export function showCheckSummary(rows) {
             '<span style="font-family:IBM Plex Mono,monospace;font-size:11px;font-weight:600;color:#4f9cf9;width:100%;margin-bottom:1px;">'+it.item+(it.count>1?' <span style="font-size:10px;padding:1px 5px;border-radius:3px;background:rgba(251,146,60,0.12);color:#fb923c;border:1px solid rgba(251,146,60,0.3);">\xD7'+it.count+'</span>':'')+'</span>'+
             '<span style="font-size:10px;color:#6b7494;">Size</span><span style="font-size:10px;color:#f0c060;margin-left:4px;">'+jod(it.sizes)+'</span>'+
             '<span style="font-size:10px;color:#6b7494;margin-left:10px;">Color</span><span style="font-size:10px;color:#a78bfa;margin-left:4px;">'+jod(it.colors)+'</span>'+
+            '<span style="font-size:10px;color:#6b7494;margin-left:10px;">Color Name</span><span style="font-size:10px;color:#e0aaff;margin-left:4px;">'+jod(it.colorNames)+'</span>'+
             '<span style="font-size:10px;color:#6b7494;margin-left:10px;">Season</span><span style="font-size:10px;color:#3ecf8e;margin-left:4px;">'+jod(it.seasons)+'</span>'+
           '</div>';
         }).join('');
@@ -841,8 +866,7 @@ export function showCheckSummary(rows) {
     }
 
     function filteredPoData(){
-      var el=document.getElementById('f-po-sum');
-      return matchPoData((el&&el.value)||'');
+      return matchPoData(poFilterValue(),itemFilterValue());
     }
 
     function exportPoSummary(){
@@ -850,43 +874,55 @@ export function showCheckSummary(rows) {
       if(!data.length){alert('No POs to export.');return;}
       var X=window.XLSX||(window.opener&&!window.opener.closed&&window.opener.XLSX);
       if(!X){alert('Excel library is still loading. Please try again in a moment.');return;}
+      // Keep only the PO+item pairs still on screen, so the workbook matches the
+      // filtered view rather than the whole result set.
       var keep={};
-      data.forEach(function(d){keep[d.po]=true;});
+      data.forEach(function(d){
+        d.items.forEach(function(it){keep[d.po+'||'+it.item]=true;});
+      });
       var groups={},order=[];
       var addTo=function(arr,v){if(v&&v!=='—'&&arr.indexOf(v)<0)arr.push(v);};
       var val=function(v){return (!v||v==='—')?'-':v;};
       ALL_ROWS.forEach(function(r){
         var po=gv(r,'PURCHID')||'(unknown)';
-        if(!keep[po])return;
         var item=gv(r,'ITEMID')||'(unknown)';
+        if(!keep[po+'||'+item])return;
         var se=val(gv(r,'INVENTSEASONID'));
         var co=val(gv(r,'INVENTCOLORID'));
         var k=item+'||'+se+'||'+co;
         var e=groups[k];
-        if(!e){e=groups[k]={item:item,season:se,color:co,pos:[],sizes:[]};order.push(k);}
+        // Colour name is carried for display only — it never splits a group, so a
+        // colour id that maps to one name keeps producing a single row.
+        if(!e){e=groups[k]={item:item,season:se,color:co,pos:[],sizes:[],colorNames:[]};order.push(k);}
         addTo(e.pos,po);
         addTo(e.sizes,gv(r,'INVENTSIZEID'));
+        addTo(e.colorNames,gv(r,'IVZ_ColorDesc_CT'));
       });
       order.sort(function(a,b){
         var x=groups[a],y=groups[b];
         return x.item.localeCompare(y.item)||x.season.localeCompare(y.season)||x.color.localeCompare(y.color);
       });
-      var aoa=[['ITEM','PO','Color','SIZE','SEASON']];
+      var aoa=[['ITEM','PO','Color','Color Name','SIZE','SEASON']];
       order.forEach(function(k){
         var e=groups[k];
-        aoa.push([e.item,jod(e.pos.sort()),e.color,jod(e.sizes.sort()),e.season]);
+        aoa.push([e.item,jod(e.pos.sort()),e.color,jod(e.colorNames.sort()),jod(e.sizes.sort()),e.season]);
       });
       var ws=X.utils.aoa_to_sheet(aoa);
-      ws['!cols']=[{wch:22},{wch:48},{wch:40},{wch:40},{wch:24}];
+      ws['!cols']=[{wch:22},{wch:48},{wch:40},{wch:30},{wch:40},{wch:24}];
       var wb=X.utils.book_new();
       X.utils.book_append_sheet(wb,ws,'PO Summary');
       X.writeFile(wb,'BotPO_POSummary_'+new Date().toISOString().slice(0,10)+'.xlsx');
     }
 
+    function itemSumItemValue(){var el=document.getElementById('f-item-sum');return (el&&el.value)||'';}
+
     function filteredItemData(){
-      var el=document.getElementById('f-item-sum');
-      var q=((el&&el.value)||'').toLowerCase();
-      return ITEM_DATA.filter(function(d){return !q||d.item.toLowerCase().includes(q);});
+      var terms=poTerms(itemSumItemValue());
+      if(!terms.length) return ITEM_DATA.slice();
+      return ITEM_DATA.filter(function(d){
+        var item=String(d.item).toLowerCase();
+        return terms.some(function(t){return item.includes(t);});
+      });
     }
 
     function exportItemSummary(){
@@ -894,18 +930,19 @@ export function showCheckSummary(rows) {
       if(!data.length){alert('No items to export.');return;}
       var X=window.XLSX||(window.opener&&!window.opener.closed&&window.opener.XLSX);
       if(!X){alert('Excel library is still loading. Please try again in a moment.');return;}
-      var aoa=[['ITEM','Color','SIZE','SEASON']];
-      data.forEach(function(d){aoa.push([d.item,jod(d.colors),jod(d.sizes),jod(d.seasons)]);});
+      var aoa=[['ITEM','Color','Color Name','SIZE','SEASON']];
+      data.forEach(function(d){aoa.push([d.item,jod(d.colors),jod(d.colorNames),jod(d.sizes),jod(d.seasons)]);});
       var ws=X.utils.aoa_to_sheet(aoa);
-      ws['!cols']=[{wch:22},{wch:40},{wch:40},{wch:24}];
+      ws['!cols']=[{wch:22},{wch:40},{wch:30},{wch:40},{wch:24}];
       var wb=X.utils.book_new();
       X.utils.book_append_sheet(wb,ws,'Item Summary');
       X.writeFile(wb,'BotPO_ItemSummary_'+new Date().toISOString().slice(0,10)+'.xlsx');
     }
 
-    function renderItemSummary(filter){
-      var q=(filter||'').toLowerCase();
-      var data=ITEM_DATA.filter(function(d){return !q||d.item.toLowerCase().includes(q);});
+    function renderItemSummary(){
+      var data=filteredItemData();
+      var icnt=document.getElementById('item-sum-count');
+      if(icnt)icnt.textContent=data.length+' item'+(data.length!==1?'s':'')+(data.length!==ITEM_DATA.length?' of '+ITEM_DATA.length:'');
       if(!data.length){document.getElementById('item-sum-body').innerHTML='<div style="padding:16px;text-align:center;font-family:IBM Plex Mono,monospace;font-size:11px;color:#6b7494;">No items match.</div>';applyTheme(document.getElementById('item-sum-body'));return;}
       document.getElementById('item-sum-body').innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;background:#0d0f14;">'+
         data.map(function(d){
@@ -913,6 +950,7 @@ export function showCheckSummary(rows) {
             '<span style="font-family:IBM Plex Mono,monospace;font-size:11px;font-weight:600;color:#4f9cf9;width:100%;margin-bottom:2px;">'+d.item+'</span>'+
             '<span style="font-size:10px;color:#6b7494;">Size</span><span style="font-size:10px;color:#f0c060;margin-left:4px;">'+jod(d.sizes)+'</span>'+
             '<span style="font-size:10px;color:#6b7494;margin-left:10px;">Color</span><span style="font-size:10px;color:#a78bfa;margin-left:4px;">'+jod(d.colors)+'</span>'+
+            '<span style="font-size:10px;color:#6b7494;margin-left:10px;">Color Name</span><span style="font-size:10px;color:#e0aaff;margin-left:4px;">'+jod(d.colorNames)+'</span>'+
             '<span style="font-size:10px;color:#6b7494;margin-left:10px;">Season</span><span style="font-size:10px;color:#3ecf8e;margin-left:4px;">'+jod(d.seasons)+'</span>'+
           '</div>';
         }).join('')+
@@ -1006,8 +1044,8 @@ export function showCheckSummary(rows) {
     }
 
     applyTheme();
-    renderPoSummary('');
-    renderItemSummary('');
+    renderPoSummary();
+    renderItemSummary();
     buildTable(ALL_ROWS);
   <\/script>
 </body>
