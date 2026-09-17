@@ -1,8 +1,8 @@
 # Web-To-Query — Developer Guide
 
 > The technical guide: the file layout, all thirteen modes and the `queryType` contract, the
-> request body per mode, the localStorage keys, and what to touch when adding a mode. For a
-> short overview of what this is, see the **[README](../README.md)**.
+> request body per mode, the n8n workflow on the other end of it, the localStorage keys, and what to
+> touch when adding a mode. For a short overview of what this is, see the **[README](../README.md)**.
 
 A purchase-order query dashboard. Every mode posts a JSON body to one **n8n webhook**, which runs the
 matching SQL against MSSQL and returns rows the page renders into a table. The browser holds no
@@ -59,7 +59,10 @@ Web-To-Query/
 │  └─ src/reports/index.js  the same reports.js, synced by hand (see Notes)
 ├─ Version/              standalone HTML prototypes, V1.2 → V3
 ├─ README.md            GitHub landing page: what the tool does, for anyone
-└─ docs/DEVELOPER-GUIDE.md  this file
+└─ docs/
+   ├─ DEVELOPER-GUIDE.md   this file
+   └─ images/              only committed images live here — raw/ is gitignored,
+                           so never link a README or this guide into raw/
 ```
 
 ---
@@ -79,7 +82,7 @@ Thirteen, in sidebar order. `queryType` is what n8n receives and switches on.
 | 7 | `unit` | Check Unit On AX | `unit` |
 | 8 | `update` | Pack / Roll | `update` |
 | 9 | `packroll` | QTY Pack/Roll | `packroll` |
-| 10 | `compare` | Compare PO Stg vs PO AX | **two calls:** `search` + `count` |
+| 10 | `compare` | Compare PO Stg vs PO AX | **two calls:** `search` + `count`, plus `Find` if staging comes back empty |
 | 11 | `comparedbc` | Compare PO Stg vs PO DBC | **two calls:** `search` + `searchdbc` |
 | 12 | `check` | BotPO Checking | `check` |
 | 13 | `updatestaging` | Update Staging Status | `updatestaging` |
@@ -121,6 +124,115 @@ Only three modes add extra fields:
 
 `searchdbc` is the one non-flat response — `{ success, header, lines, totalHeaderRows, totalLineRows }`
 — which is why it gets its own renderer.
+
+### An empty result arrives as one empty row
+
+Every `Format …` node emits at least one item, so a query that matched **nothing** answers:
+
+```json
+{ "success": true, "queryType": "search", "totalRows": 1, "rows": [{}] }
+```
+
+`totalRows: 1`, and one object with no keys. **That is no data, not one row.** `fetchQuery()` drops
+it — `isBlankRow()` in [`js/utils.js`](../Final%20Version/js/utils.js) filters out any row with no
+keys, or with every value `null`, `undefined` or blank — so every caller sees `rows: []` and
+`rows.length` can be trusted as a row count.
+
+One near-miss is worth knowing, because it is *not* blank:
+
+| Query | Response when nothing matched | Stripped? |
+| ----- | ----------------------------- | --------- |
+| staging — `search`, `Find` | `[{}]` | yes, by `isBlankRow()` |
+| AX — `count` | `[{ "TOTAL_QTY": 0, "TOTAL_NET_AMOUNT": 0 }]` | no — real zeroes, but no `LINENUMBER` |
+
+The compare dispatch drops that totals-only row itself, by keeping only AX rows that carry a
+`LINENUMBER`. Without it, a PO that never reached AX renders a phantom **AX Only** line `0` instead
+of an empty AX side — the exact case the tab exists to catch.
+
+### Compare's staging fallback
+
+`compare` asks `search` for the staging side, whose SQL filters `EXECUTIONID LIKE 'BotPO%'`. A PO
+loaded into staging by an execution named anything else matches nothing there, so
+[`js/query.js`](../Final%20Version/js/query.js) re-asks with `Find` and compares that against AX:
+
+```
+search + count (parallel)  →  search rows empty?  →  Find  →  renderCompare(stagingRows, axLines, po, source)
+```
+
+`renderCompare()` takes the source as its fourth argument and the results header reads
+`(via SEARCH BOTPO)` or `(via SEARCH PO — fallback)`, so which query answered is always on screen.
+
+> ⚠️ **The fallback depends on blank-row stripping.** It fires only when the BotPO rows are empty,
+> and before `isBlankRow()` existed the `[{}]` row counted as one — so the fallback never ran and the
+> tab compared a real AX line against a staging row whose every field was `0` / `—`. It read as a
+> total mismatch rather than as *no BotPO staging data*. Any change that lets a blank row back
+> through reintroduces that exact bug.
+
+---
+
+## The n8n side
+
+The workflow that receives all of the above, **Web - MSSQL Database Query**:
+
+![The n8n workflow: one webhook, a Switch on queryType, one query branch per mode, one response](images/n8n-workflow.jpg)
+
+The shape is one entry and one exit with a fan-out between them:
+
+```
+Webhook → Parse Web Request → Parse Query Intent → Route by Query Type ─┬→ Execute Query → Format ─┐
+                                                   (Switch, mode: Rules) ├→ Execute Query → Format ─┤→ Respond to Webhook
+                                                                        └→ … one pair per mode …  ─┘
+```
+
+- **`Route by Query Type`** is the routing table. It switches on `queryType`, so that value *is* the
+  question — see [A mode key is not always its `queryType`](#a-mode-key-is-not-always-its-querytype).
+- **Each branch is a pair**: an `Execute Query` node holding the SQL for that mode, and a Code node
+  reshaping the rows into what the renderer expects. The `Format …` nodes are why the frontend can
+  assume a flat `rows` array for every mode except `searchdbc`.
+- **The SQL lives in those nodes**, against Staging, AX or DBC. This is the whole reason the browser
+  needs no credentials — it names a mode, n8n owns the statement.
+- **The Switch ends in a `Fallback` output.** An unrecognised `queryType` does not error; it takes
+  Fallback and the tab renders an empty or useless result. A mode that silently returns nothing is
+  the symptom to look for.
+
+### Adding a mode, end to end
+
+| Side | What to add |
+| ---- | ----------- |
+| n8n | a `Route by Query Type` output matching the new `queryType`, an `Execute Query`, a `Format` node, wired to `Respond to Webhook` |
+| Frontend | a `MODES` entry, a nav item in `index.html`, a `sqlPreview` branch, a renderer or a reuse of one — plus a `QUERY_TYPES` entry if the wire value differs from the mode key |
+
+> ⚠️ **The two sides are edited independently and nothing links them.** A mode whose `queryType` has
+> no matching Switch output takes Fallback; a Switch branch nobody posts to is dead weight. Renaming
+> either side breaks the pair silently — there is no build step that would catch it.
+
+### Reading the Switch outputs
+
+The canvas above shows **14 outputs**. Their labels are n8n *display names*, not the values they
+match on, so the pairing below is inferred from the labels and has **not** been confirmed against
+each rule's condition:
+
+| Switch output | Looks like the mode | Note |
+| ------------- | ------------------- | ---- |
+| Search PO | `search` | |
+| Search Error | `list` | |
+| Search PO AX | `count` | |
+| Update Bot | `update` | |
+| Bot Checking | `check` | |
+| Update Stagging | `updatestaging` | |
+| QTY Pack/Roll | `packroll` | |
+| PO DBC | `searchdbc` | |
+| Check Item | `item` | |
+| Check Unit | `unit` | |
+| **PO-Stagging** | `find` → posts `Find` | 🔴 unconfirmed — see below |
+| Today PO in D… | — | no tab posts to it |
+| Today PO in AX | — | no tab posts to it |
+| Fallback | — | catch-all |
+
+> 🔴 **There is no output labelled `Find`, and the app posts `Find`.** Either the `PO-Stagging`
+> branch's condition matches `Find` — in which case Search PO (Staging) routes correctly — or it does
+> not, and that tab has been taking **Fallback**. Opening the Switch node settles it. Until then,
+> treat Search PO (Staging) as unverified end to end.
 
 ---
 

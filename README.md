@@ -77,6 +77,12 @@ A mode's key and its wire value need not match. `QUERY_TYPES` in
 so internal keys stay lowercase like every other mode while the payload keeps the exact spelling the
 n8n Switch expects.
 
+**Compare falls back from one staging lookup to the other.** Compare Stg vs PO AX asks Search BotPO
+first, whose SQL only sees executions named `BotPO…`. A PO that reached staging through some other
+execution matches nothing there — so the compare re-asks with Search PO and compares *that* against
+AX rather than showing a blank staging side. The results header names whichever query supplied the
+staging rows, so the fallback is never silent.
+
 ---
 
 ## The other half: the n8n workflow
@@ -163,7 +169,7 @@ npm install && npm run dev
 |---|---|
 | **The app** | [`Final Version/`](Final%20Version) — plain JS, 14 modules loaded as ordinary scripts (no bundler, no imports), 12 stylesheets |
 | **Dispatch** | [`js/core.js`](Final%20Version/js/core.js) holds the `MODES` table, the `QUERY_TYPES` overrides and `isStagingSearch()` · [`js/query.js`](Final%20Version/js/query.js) runs each mode, including the two parallel compares |
-| **Transport** | [`js/utils.js`](Final%20Version/js/utils.js) — `fetchQuery()` builds the request body and throws on non-2xx |
+| **Transport** | [`js/utils.js`](Final%20Version/js/utils.js) — `fetchQuery()` builds the request body, throws on non-2xx, and strips n8n's empty filler row so "no data" doesn't count as one row |
 | **Renderers** | one per shape: results, DBC header+lines, Staging vs AX, Staging vs DBC — modes that share a shape share a renderer, so `find` reuses everything `search` draws, down to the `#search-tbody` its filters target |
 | **React port** | [`po-query-react/`](po-query-react) — React 19 + Vite 8, one component per mode in `src/tabs/`, the shared report windows in `src/reports/` |
 

@@ -1,7 +1,9 @@
 // ── Compare PO ─────────────────────────────────────────────────────
-function renderCompare(stagingRows, axRows, po) {
+// stagingSource: 'search' (SEARCH BOTPO) or 'find' (SEARCH PO fallback used
+// when SEARCH BOTPO returned no staging rows for this PO).
+function renderCompare(stagingRows, axRows, po, stagingSource = 'search') {
   const area = document.getElementById('results-area');
-  lastCompareData = { stagingRows, axRows };
+  lastCompareData = { stagingRows, axRows, stagingSource };
   updateBadge('compare', stagingRows.length + axRes_len(axRows));
 
   // Build lookup maps keyed by LINENUMBER (primary) + ITEMID (secondary)
@@ -215,7 +217,8 @@ function renderCompare(stagingRows, axRows, po) {
     <div class="results-meta">
       <span class="results-count">
         Comparing PO <strong>${po}</strong> —
-        <span style="color:var(--accent)" id="compare-staging-count">${stagingRows.length} Staging</span> vs
+        <span style="color:var(--accent)" id="compare-staging-count">${stagingRows.length} Staging</span>
+        <span style="font-family:var(--mono);font-size:10px;color:var(--text-dim);">(${stagingSource === 'find' ? 'via SEARCH PO — fallback' : 'via SEARCH BOTPO'})</span> vs
         <span style="color:var(--purple)">${axRows.length} AX Lines</span>
       </span>
       <span class="tag tag-compare">COMPARE PO</span>

@@ -147,6 +147,7 @@ ${kw('ORDER BY')} TM.DATAAREAID;`;
     el.innerHTML = `<span style="color:var(--accent)">── QUERY 1 (Staging)</span>
 ${kw('SELECT')} LINENUMBER, ITEMID, INVENTSIZEID, INVENTCOLORID, PURCHQTY, PURCHPRICE, LINEAMOUNT, TRANSFERSTATUS
 ${kw('FROM')} DMFPURCHLINEENTITY ${kw('WHERE')} PURCHID ${kw('=')} ${vl("'" + po + "'")} <span style="color:var(--text-dim)">…MAX EXECUTIONID…</span>
+<span style="color:var(--text-dim)">  [if QUERY 1 returns no rows → falls back to SEARCH PO (Find) for the staging side]</span>
 
 <span style="color:var(--purple)">── QUERY 2 (PO Line AX)</span>
 ${kw('SELECT')} LINENUMBER, ITEMID, IVZ_COLOR_CT, IVZ_SIZE_CT, PURCHQTY, PURCHPRICE, LINEAMOUNT

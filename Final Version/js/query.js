@@ -15,12 +15,27 @@ async function runQuery() {
   try {
     if (mode === 'compare') {
       // Fire both queries in parallel
-      const [stagingRes, axRes] = await Promise.all([
+      const [searchRes, axRes] = await Promise.all([
         fetchQuery('search', po),
         fetchQuery('count', po)
       ]);
-      addHistory(po, mode, stagingRes.rows.length + axRes.rows.length);
-      renderCompare(stagingRes.rows, axRes.rows, po);
+      // Staging side falls back to FIND (SEARCH PO) when SEARCH BOTPO returns
+      // no rows, so the AX lines still get compared against staging.
+      let stagingRows = searchRes.rows;
+      let stagingSource = 'search';
+      if (!stagingRows.length) {
+        const findRes = await fetchQuery(QUERY_TYPES.find, po);
+        stagingRows = findRes.rows;
+        stagingSource = 'find';
+      }
+      // A PO with no AX lines still answers with a totals-only row
+      // ({ TOTAL_QTY: 0, ... }, no LINENUMBER); keep it out of the line compare.
+      const axLines = axRes.rows.filter(r => {
+        const ln = getVal(r, 'LINENUMBER');
+        return ln !== null && ln !== undefined && String(ln).trim() !== '';
+      });
+      addHistory(po, mode, stagingRows.length + axLines.length);
+      renderCompare(stagingRows, axLines, po, stagingSource);
     } else if (mode === 'searchdbc') {
       const { raw } = await fetchQuery('searchdbc', po);
       const totalRows = (raw.totalHeaderRows || 0) + (raw.totalLineRows || 0);
