@@ -2,7 +2,9 @@ import { useState, useMemo } from 'react';
 import * as XLSX from 'xlsx';
 import { getVal, fmt } from '../utils';
 
-export default function ComparePOTab({ stagingRows, axRows, po }) {
+// stagingSource: 'search' (SEARCH BOTPO) or 'find' (SEARCH PO fallback used
+// when SEARCH BOTPO returned no staging rows for this PO).
+export default function ComparePOTab({ stagingRows, axRows, po, stagingSource = 'search' }) {
   const [fColor,   setFColor]   = useState('');
   const [fSize,    setFSize]    = useState('');
   const [fSeason,  setFSeason]  = useState('');
@@ -183,7 +185,10 @@ export default function ComparePOTab({ stagingRows, axRows, po }) {
       <div className="results-meta">
         <span className="results-count">
           Comparing PO <strong>{po}</strong> —{' '}
-          <span style={{ color:'var(--accent)' }}>{stagingRows.length} Staging</span> vs{' '}
+          <span style={{ color:'var(--accent)' }}>{stagingRows.length} Staging</span>{' '}
+          <span style={{ fontFamily:'var(--mono)', fontSize:10, color:'var(--text-dim)' }}>
+            ({stagingSource === 'find' ? 'via SEARCH PO — fallback' : 'via SEARCH BOTPO'})
+          </span> vs{' '}
           <span style={{ color:'var(--purple)' }}>{axRows.length} AX Lines</span>
         </span>
         <span className="tag tag-compare">COMPARE PO</span>

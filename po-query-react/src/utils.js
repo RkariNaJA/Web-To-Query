@@ -20,6 +20,20 @@ export function fmt(v, decimals = 2) {
   return n.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 }
 
+// n8n's Format nodes always emit at least one item, so a query that matched
+// nothing comes back as `{ totalRows: 1, rows: [{}] }` — one object with no
+// keys. That is NO DATA, not one row; without stripping it every caller counts
+// a phantom row and compare matches AX against a blank staging line.
+export function isBlankRow(r) {
+  if (!r || typeof r !== 'object') return true;
+  const keys = Object.keys(r);
+  if (!keys.length) return true;
+  return keys.every(k => {
+    const v = r[k];
+    return v === null || v === undefined || String(v).trim() === '';
+  });
+}
+
 export async function fetchQuery(webhook, auth, queryType, po, execId = null, extraBody = {}) {
   const headers = { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' };
   if (auth) headers['Authorization'] = auth;
@@ -31,8 +45,9 @@ export async function fetchQuery(webhook, auth, queryType, po, execId = null, ex
     throw new Error(`HTTP ${res.status} (${queryType}): ${res.statusText}${txt ? ' — ' + txt.slice(0, 80) : ''}`);
   }
   const data = await res.json();
-  const rows = Array.isArray(data) ? data
+  const rawRows = Array.isArray(data) ? data
     : Array.isArray(data.rows) ? data.rows
     : Array.isArray(data.data) ? data.data : [];
+  const rows = rawRows.filter(r => !isBlankRow(r));
   return { rows, raw: data };
 }

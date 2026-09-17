@@ -121,14 +121,29 @@ export default function App() {
         setUiState({ type: 'result', mode: 'unit', rows, po: poInput.trim(), raw });
 
       } else if (mode === 'compare') {
-        const [stagingRes, axRes] = await Promise.all([
+        const [searchRes, axRes] = await Promise.all([
           fetchQuery(config.webhook, config.auth, 'search', poInput.trim()),
           fetchQuery(config.webhook, config.auth, 'count', poInput.trim()),
         ]);
-        const total = stagingRes.rows.length + axRes.rows.length;
+        // Staging side falls back to FIND (SEARCH PO) when SEARCH BOTPO returns
+        // no rows, so the AX lines still get compared against staging.
+        let stagingRows = searchRes.rows;
+        let stagingSource = 'search';
+        if (!stagingRows.length) {
+          const findRes = await fetchQuery(config.webhook, config.auth, QUERY_TYPES.find, poInput.trim());
+          stagingRows = findRes.rows;
+          stagingSource = 'find';
+        }
+        // A PO with no AX lines still answers with a totals-only row
+        // ({ TOTAL_QTY: 0, ... }, no LINENUMBER); keep it out of the line compare.
+        const axLines = axRes.rows.filter(r => {
+          const ln = getVal(r, 'LINENUMBER');
+          return ln !== null && ln !== undefined && String(ln).trim() !== '';
+        });
+        const total = stagingRows.length + axLines.length;
         addHistory(poInput.trim(), mode, total);
         updateBadge('compare', total);
-        setUiState({ type: 'result', mode: 'compare', stagingRows: stagingRes.rows, axRows: axRes.rows, po: poInput.trim() });
+        setUiState({ type: 'result', mode: 'compare', stagingRows, axRows: axLines, stagingSource, po: poInput.trim() });
 
       } else if (mode === 'comparedbc') {
         const [stagingRes, dbcRes] = await Promise.all([
@@ -207,9 +222,9 @@ export default function App() {
       );
     }
     if (uiState.type === 'result') {
-      const { mode: rMode, rows, po, raw, stagingRows, axRows, dbcLines, dbcHeader, serverTotalQty, serverTotalAmount } = uiState;
+      const { mode: rMode, rows, po, raw, stagingRows, axRows, stagingSource, dbcLines, dbcHeader, serverTotalQty, serverTotalAmount } = uiState;
 
-      if (rMode === 'compare')     return <ComparePOTab stagingRows={stagingRows} axRows={axRows} po={po} />;
+      if (rMode === 'compare')     return <ComparePOTab stagingRows={stagingRows} axRows={axRows} po={po} stagingSource={stagingSource} />;
       if (rMode === 'comparedbc')  return <CompareDBCTab stagingRows={stagingRows} dbcLines={dbcLines} po={po} />;
       if (rMode === 'updatestaging') return <UpdateStagingTab raw={raw} po={po} />;
       if (rMode === 'searchdbc')   return <SearchDBCTab dbcHeader={dbcHeader} dbcLines={dbcLines} po={po} />;
