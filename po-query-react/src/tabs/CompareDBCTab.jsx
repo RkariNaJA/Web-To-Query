@@ -168,7 +168,7 @@ export default function CompareDBCTab({ stagingRows, dbcLines, po }) {
         <div className={`summary-card ${qtyMatch ? 'highlight-match' : 'highlight-mismatch'}`}>
           <div className="summary-label">Total QTY Staging</div>
           <div className="summary-value blue">{fmt(stgTotalQty,0)}</div>
-          <div className="summary-sub" style={{ color:'var(--pink)' }}>DBC: {fmt(dbcTotalQty,0)}</div>
+          <div className="summary-sub text-pink">DBC: {fmt(dbcTotalQty,0)}</div>
         </div>
         <div className={`summary-card ${qtyMatch ? 'highlight-match' : 'highlight-mismatch'}`}>
           <div className="summary-label">QTY Diff (DBC − Stg)</div>
@@ -178,7 +178,7 @@ export default function CompareDBCTab({ stagingRows, dbcLines, po }) {
         <div className={`summary-card ${amtMatch ? 'highlight-match' : 'highlight-mismatch'}`}>
           <div className="summary-label">Total Amount Staging</div>
           <div className="summary-value blue">{fmt(stgTotalAmt,2)}</div>
-          <div className="summary-sub" style={{ color:'var(--pink)' }}>DBC: {fmt(dbcTotalAmt,2)}</div>
+          <div className="summary-sub text-pink">DBC: {fmt(dbcTotalAmt,2)}</div>
         </div>
         <div className={`summary-card ${amtMatch ? 'highlight-match' : 'highlight-mismatch'}`}>
           <div className="summary-label">Amount Diff (DBC − Stg)</div>
@@ -195,8 +195,8 @@ export default function CompareDBCTab({ stagingRows, dbcLines, po }) {
       <div className="results-meta">
         <span className="results-count">
           Comparing PO <strong>{po}</strong> —{' '}
-          <span style={{ color:'var(--accent)' }}>{stagingRows.length} Staging</span> vs{' '}
-          <span style={{ color:'var(--pink)' }}>{dbcDeduped.length} DBC Lines</span>
+          <span className="text-accent">{stagingRows.length} Staging</span> vs{' '}
+          <span className="text-pink">{dbcDeduped.length} DBC Lines</span>
         </span>
         <span className="tag tag-comparedbc">COMPARE STG vs DBC</span>
         {allMatch
@@ -244,8 +244,8 @@ export default function CompareDBCTab({ stagingRows, dbcLines, po }) {
           <thead>
             <tr>
               <th colSpan={5} className="th-group-base" style={{ borderRight:'1px solid var(--border-accent)' }}>LINE INFO</th>
-              <th colSpan={3} className="th-group-staging" style={{ borderRight:'1px solid rgba(79,156,249,0.2)' }}>QTY</th>
-              <th colSpan={3} className="th-group-ax" style={{ borderRight:'1px solid rgba(232,121,249,0.2)' }}>PRICE</th>
+              <th colSpan={3} className="th-group-staging" style={{ borderRight:'1px solid var(--accent-line)' }}>QTY</th>
+              <th colSpan={3} className="th-group-ax" style={{ borderRight:'1px solid var(--pink-line)' }}>PRICE</th>
               <th colSpan={3} className="th-group-diff">STATUS</th>
             </tr>
             <tr>{COLS.map(c => <th key={c}>{c}</th>)}</tr>
@@ -284,7 +284,7 @@ export default function CompareDBCTab({ stagingRows, dbcLines, po }) {
               const tCls    = {1:'transfer-ok',2:'transfer-error',0:'transfer-pending'};
 
               const dbcStatusCell = d
-                ? <td><span style={{ fontFamily:'var(--mono)', fontSize:11, padding:'2px 7px', borderRadius:4, background: isImported ? 'rgba(62,207,142,0.12)' : 'rgba(251,146,60,0.12)', color: isImported ? 'var(--green)' : 'var(--orange)' }}>{dbcStat}</span></td>
+                ? <td><span className={`dbc-status ${isImported ? 'imported' : 'not-imported'}`}>{dbcStat}</span></td>
                 : <td className="td-dim">—</td>;
 
               let transferCell;

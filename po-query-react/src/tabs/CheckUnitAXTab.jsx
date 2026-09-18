@@ -46,7 +46,7 @@ export default function CheckUnitAXTab({ rows, po }) {
   return (
     <>
       <div className="summary-row">
-        <div className="summary-card"><div className="summary-label">Total Rows</div><div className="summary-value" style={{ color:'#818cf8' }}>{filtered.length}</div></div>
+        <div className="summary-card"><div className="summary-label">Total Rows</div><div className="summary-value indigo">{filtered.length}</div></div>
         <div className="summary-card"><div className="summary-label">Companies</div><div className="summary-value">{shownCompanies}</div></div>
         <div className="summary-card"><div className="summary-label">Module Types</div><div className="summary-value">{shownModules}</div></div>
       </div>
@@ -55,8 +55,8 @@ export default function CheckUnitAXTab({ rows, po }) {
         <span className="results-count">Showing <strong>{filtered.length}</strong>{filtered.length !== rows.length ? ` / ${rows.length}` : ''} row{filtered.length !== 1 ? 's' : ''} for Item ID <strong>{po}</strong></span>
         <span className="tag tag-unit">CHECK UNIT ON AX</span>
         <button
-          className="export-btn"
-          style={{ marginLeft:'auto', borderColor:'#818cf8', color:'#818cf8' }}
+          className="export-btn indigo"
+          style={{ marginLeft:'auto' }}
           onClick={() => showUnitSummary(filtered)}
         >≡ Summarize</button>
         <button className="export-btn" onClick={exportExcel}>⬇ Export Excel</button>

@@ -77,14 +77,7 @@ export default function QueryBar({ mode, poInput, execInput, itemInputs, onPoCha
         <div style={{ display:'flex', flexDirection:'column', gap:6, flexShrink:0 }}>
           <button className="run-btn" onClick={onRun} disabled={loading}>▶ RUN</button>
           {isItem && (
-            <button
-              onClick={onClearItem}
-              style={{ padding:'6px 18px', background:'var(--surface2)', border:'1px solid var(--border)', color:'var(--text-muted)', fontFamily:'var(--mono)', fontSize:12, fontWeight:600, borderRadius:8, cursor:'pointer', letterSpacing:'0.05em', transition:'all 0.15s' }}
-              onMouseOver={e => { e.currentTarget.style.borderColor='var(--red)'; e.currentTarget.style.color='var(--red)'; }}
-              onMouseOut={e  => { e.currentTarget.style.borderColor='var(--border)'; e.currentTarget.style.color='var(--text-muted)'; }}
-            >
-              ✕ CLEAR
-            </button>
+            <button className="ghost-btn" onClick={onClearItem}>✕ CLEAR</button>
           )}
         </div>
       </div>

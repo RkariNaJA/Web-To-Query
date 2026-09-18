@@ -29,7 +29,7 @@ export default function CheckItemAXTab({ rows, po }) {
     return r;
   }, [rows, fSize, fColor, fSeason, fCompany]);
 
-  const selStyle = { background:'var(--surface2)', border:'1px solid var(--border)', color:'var(--text-primary)', fontFamily:'var(--mono)', fontSize:11, padding:'5px 8px', borderRadius:6, cursor:'pointer', minWidth:110 };
+  const selStyle = { background:'var(--surface2)', border:'1px solid var(--border)', color:'var(--text)', fontFamily:'var(--mono)', fontSize:11, padding:'5px 8px', borderRadius:6, cursor:'pointer', minWidth:110 };
   const lblStyle = { fontFamily:'var(--mono)', fontSize:10, color:'var(--text-dim)', letterSpacing:'0.06em', textTransform:'uppercase', display:'block', marginBottom:4 };
 
   return (

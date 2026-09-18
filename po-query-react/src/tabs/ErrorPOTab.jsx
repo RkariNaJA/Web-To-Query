@@ -44,8 +44,8 @@ export default function ErrorPOTab({ rows, po }) {
             <div className="summary-value small" style={{ color:'var(--teal)', wordBreak:'break-word', whiteSpace:'normal' }}>{allSeasons}</div>
           </div>
           <div style={{ display:'flex', flexDirection:'column', gap:8, flexShrink:0, justifyContent:'center' }}>
-            <button onClick={() => showFullError(rows)} style={{ padding:'9px 18px', background:'var(--red)', color:'#fff', border:'none', borderRadius:8, fontFamily:'var(--mono)', fontSize:12, fontWeight:600, cursor:'pointer', letterSpacing:'0.05em' }}>⚠ Show Full Error</button>
-            <button onClick={() => showErrorSummary(rows)} style={{ padding:'9px 18px', background:'var(--orange)', color:'#fff', border:'none', borderRadius:8, fontFamily:'var(--mono)', fontSize:12, fontWeight:600, cursor:'pointer', letterSpacing:'0.05em' }}>≡ Error Summarize</button>
+            <button className="action-btn red" onClick={() => showFullError(rows)}>⚠ Show Full Error</button>
+            <button className="action-btn orange" onClick={() => showErrorSummary(rows)}>≡ Error Summarize</button>
           </div>
         </div>
       </div>

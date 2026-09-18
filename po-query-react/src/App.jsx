@@ -243,7 +243,7 @@ export default function App() {
 
       if (!rows || rows.length === 0) {
         return (
-          <div className="state-box" style={{ borderStyle: 'solid', borderColor: rMode === 'list' ? 'rgba(62,207,142,0.3)' : 'var(--border)' }}>
+          <div className="state-box" style={{ borderStyle: 'solid', borderColor: rMode === 'list' ? 'var(--green-line)' : 'var(--border)' }}>
             <div className="state-icon">{rMode === 'list' ? '✅' : '⊘'}</div>
             <span style={{ color: 'var(--text)' }}>{emptyMsgs[rMode] ?? `No results for PO ${po}.`}</span>
           </div>

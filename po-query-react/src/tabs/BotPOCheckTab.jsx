@@ -34,7 +34,7 @@ export default function BotPOCheckTab({ rows, po }) {
           <div className="summary-card" style={{ flex:2, minWidth:160 }}><div className="summary-label">Exec ID</div><div className="summary-value small" style={{ color:'var(--green)', wordBreak:'break-word', whiteSpace:'normal' }}>{execIds}</div></div>
           <div className="summary-card" style={{ flex:'none', minWidth:110 }}><div className="summary-label">Sites</div><div className="summary-value small" style={{ color:'var(--teal)', wordBreak:'break-word', whiteSpace:'normal' }}>{sites}</div></div>
         </div>
-        <button onClick={() => showCheckSummary(filtered)} style={{ flexShrink:0, padding:'9px 18px', background:'var(--red)', color:'#0d0f14', border:'none', borderRadius:8, fontFamily:'var(--mono)', fontSize:12, fontWeight:600, cursor:'pointer', letterSpacing:'0.05em' }}>≡ Error Summarize</button>
+        <button className="action-btn red" style={{ flexShrink:0 }} onClick={() => showCheckSummary(filtered)}>≡ Error Summarize</button>
       </div>
       <div className="results-meta">
         <span className="results-count">Showing <strong>{filtered.length}</strong>{filtered.length !== rows.length ? ` / ${rows.length}` : ''} row{filtered.length!==1?'s':''} for PO <strong>{po}</strong></span>

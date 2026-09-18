@@ -74,7 +74,7 @@ export default function SearchDBCTab({ dbcHeader, dbcLines, po }) {
       <div className="summary-row">
         <div className="summary-card">
           <div className="summary-label">Header Rows</div>
-          <div className="summary-value" style={{ color:'#38bdf8' }}>{filteredHeader.length}</div>
+          <div className="summary-value sky">{filteredHeader.length}</div>
         </div>
         <div className="summary-card">
           <div className="summary-label">Line Rows</div>
@@ -93,14 +93,14 @@ export default function SearchDBCTab({ dbcHeader, dbcLines, po }) {
       <div className="results-meta">
         <span className="results-count">
           PO <strong>{po}</strong> —{' '}
-          <span style={{ color:'#38bdf8' }}>{filteredHeader.length} Header</span> ·{' '}
-          <span style={{ color:'var(--accent)' }}>{filteredLines.length} Lines</span>
+          <span className="text-sky">{filteredHeader.length} Header</span> ·{' '}
+          <span className="text-accent">{filteredLines.length} Lines</span>
         </span>
         <span className="tag tag-searchdbc">SEARCH PO DBC</span>
         <button className="export-btn" style={{ marginLeft:'auto' }} onClick={exportExcel}>⬇ Export Excel</button>
       </div>
 
-      <div className="dbc-section-label" style={{ color:'#38bdf8' }}>── Header</div>
+      <div className="dbc-section-label sky">── Header</div>
       <div className="filters-row">
         <Filter label="Created"  value={hCreated}  onChange={setHCreated}  options={uniq(header,'CREATEDATETIME')} minWidth={160} />
         <Filter label="Exported" value={hExported} onChange={setHExported} options={uniq(header,'EXPORTDATETIME')} minWidth={160} />
@@ -122,7 +122,7 @@ export default function SearchDBCTab({ dbcHeader, dbcLines, po }) {
         </table>
       </div>
 
-      <div className="dbc-section-label" style={{ color:'var(--accent)' }}>── Lines</div>
+      <div className="dbc-section-label accent">── Lines</div>
       <div className="filters-row">
         <Filter label="Created"     value={lCreated}  onChange={setLCreated}  options={uniq(lines,'CREATEDATETIME')} minWidth={160} />
         <Filter label="Exported"    value={lExported} onChange={setLExported} options={uniq(lines,'EXPORTDATETIME')} minWidth={160} />

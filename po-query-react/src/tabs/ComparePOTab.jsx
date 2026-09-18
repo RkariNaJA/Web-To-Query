@@ -158,7 +158,7 @@ export default function ComparePOTab({ stagingRows, axRows, po, stagingSource = 
         <div className={`summary-card ${qtyMatch ? 'highlight-match' : 'highlight-mismatch'}`}>
           <div className="summary-label">Total QTY Staging</div>
           <div className="summary-value blue">{fmt(stagingTotalQty,0)}</div>
-          <div className="summary-sub" style={{ color:'var(--purple)' }}>AX: {fmt(axTotalQty,0)}</div>
+          <div className="summary-sub text-purple">AX: {fmt(axTotalQty,0)}</div>
         </div>
         <div className={`summary-card ${qtyMatch ? 'highlight-match' : 'highlight-mismatch'}`}>
           <div className="summary-label">QTY Diff (AX − Staging)</div>
@@ -168,7 +168,7 @@ export default function ComparePOTab({ stagingRows, axRows, po, stagingSource = 
         <div className={`summary-card ${amtMatch ? 'highlight-match' : 'highlight-mismatch'}`}>
           <div className="summary-label">Total Amount Staging</div>
           <div className="summary-value blue">{fmt(stagingTotalAmt,2)}</div>
-          <div className="summary-sub" style={{ color:'var(--purple)' }}>AX: {fmt(axTotalAmt,2)}</div>
+          <div className="summary-sub text-purple">AX: {fmt(axTotalAmt,2)}</div>
         </div>
         <div className={`summary-card ${amtMatch ? 'highlight-match' : 'highlight-mismatch'}`}>
           <div className="summary-label">Amount Diff (AX − Staging)</div>
@@ -185,11 +185,11 @@ export default function ComparePOTab({ stagingRows, axRows, po, stagingSource = 
       <div className="results-meta">
         <span className="results-count">
           Comparing PO <strong>{po}</strong> —{' '}
-          <span style={{ color:'var(--accent)' }}>{stagingRows.length} Staging</span>{' '}
-          <span style={{ fontFamily:'var(--mono)', fontSize:10, color:'var(--text-dim)' }}>
+          <span className="text-accent">{stagingRows.length} Staging</span>{' '}
+          <span style={{ fontSize:10, color:'var(--text-dim)' }}>
             ({stagingSource === 'find' ? 'via SEARCH PO — fallback' : 'via SEARCH BOTPO'})
           </span> vs{' '}
-          <span style={{ color:'var(--purple)' }}>{axRows.length} AX Lines</span>
+          <span className="text-purple">{axRows.length} AX Lines</span>
         </span>
         <span className="tag tag-compare">COMPARE PO</span>
         {allMatch
@@ -244,8 +244,8 @@ export default function ComparePOTab({ stagingRows, axRows, po, stagingSource = 
           <thead>
             <tr>
               <th colSpan={4} className="th-group-base" style={{ borderRight:'1px solid var(--border-accent)' }}>LINE INFO</th>
-              <th colSpan={3} className="th-group-staging" style={{ borderRight:'1px solid rgba(79,156,249,0.2)' }}>QTY</th>
-              <th colSpan={3} className="th-group-ax" style={{ borderRight:'1px solid rgba(167,139,250,0.2)' }}>PRICE</th>
+              <th colSpan={3} className="th-group-staging" style={{ borderRight:'1px solid var(--accent-line)' }}>QTY</th>
+              <th colSpan={3} className="th-group-ax" style={{ borderRight:'1px solid var(--purple-line)' }}>PRICE</th>
               <th colSpan={2} className="th-group-diff">STATUS</th>
             </tr>
             <tr>{COLS.map(c => <th key={c}>{c}</th>)}</tr>

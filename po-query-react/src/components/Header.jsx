@@ -20,7 +20,7 @@ export default function Header({ onOpenConfig, theme, onCycleTheme }) {
         </button>
         <button
           onClick={onOpenConfig}
-          style={{ background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text-muted)', fontFamily: 'var(--mono)', fontSize: 11, padding: '5px 12px', borderRadius: 6, cursor: 'pointer', letterSpacing: '0.06em' }}
+          style={{ background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text-muted)', fontFamily: 'var(--sans)', fontSize: 11, fontWeight: 600, padding: '5px 12px', borderRadius: 'var(--r-sm)', cursor: 'pointer', letterSpacing: '0.06em' }}
         >
           ⚙ CONFIG
         </button>

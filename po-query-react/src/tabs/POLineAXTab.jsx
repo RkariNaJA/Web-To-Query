@@ -43,8 +43,8 @@ export default function POLineAXTab({ rows, po, serverTotalQty, serverTotalAmoun
     });
   }, [rows, fItemId, fJobNo, fColor, fSize, fSeason]);
 
-  const selStyle = { background:'var(--surface2)', border:'1px solid var(--border)', color:'var(--text-primary)', fontFamily:'var(--mono)', fontSize:11, padding:'5px 8px', borderRadius:6, cursor:'pointer', minWidth:110 };
-  const lblStyle = { fontFamily:'var(--mono)', fontSize:10, color:'var(--text-dim)', letterSpacing:'0.06em', textTransform:'uppercase', display:'block', marginBottom:4 };
+  const selStyle = { background:'var(--surface2)', border:'1px solid var(--border)', color:'var(--text)', fontFamily:'var(--mono)', fontSize:11, padding:'5px 8px', borderRadius:'var(--r-sm)', cursor:'pointer', minWidth:110 };
+  const lblStyle = { fontFamily:'var(--sans)', fontSize:10, fontWeight:600, color:'var(--text-dim)', letterSpacing:'0.1em', textTransform:'uppercase', display:'block', marginBottom:4 };
 
   function clearAll() { setFItemId(''); setFJobNo(''); setFColor(''); setFSize(''); setFSeason(''); }
 
@@ -61,7 +61,7 @@ export default function POLineAXTab({ rows, po, serverTotalQty, serverTotalAmoun
         <div><label style={lblStyle}>Color</label><select style={selStyle} value={fColor} onChange={e=>setFColor(e.target.value)}><option value="">All</option>{colorOpts.map(v=><option key={v} value={v}>{v}</option>)}</select></div>
         <div><label style={lblStyle}>Size</label><select style={selStyle} value={fSize} onChange={e=>setFSize(e.target.value)}><option value="">All</option>{sizeOpts.map(v=><option key={v} value={v}>{v}</option>)}</select></div>
         <div><label style={lblStyle}>Season</label><select style={selStyle} value={fSeason} onChange={e=>setFSeason(e.target.value)}><option value="">All</option>{seasonOpts.map(v=><option key={v} value={v}>{v}</option>)}</select></div>
-        <button onClick={clearAll} style={{alignSelf:'flex-end',padding:'5px 12px',background:'var(--surface2)',border:'1px solid var(--border)',color:'var(--text-muted)',fontFamily:'var(--mono)',fontSize:11,borderRadius:6,cursor:'pointer'}}>✕ Clear</button>
+        <button className="filter-clear" onClick={clearAll}>✕ Clear</button>
       </div>
       <div className="results-meta">
         <span className="results-count">Showing <strong>{filtered.length}</strong> row{filtered.length !== 1 ? 's' : ''} for PO <strong>{po}</strong></span>
