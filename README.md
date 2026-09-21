@@ -45,7 +45,9 @@ client.** It sends a mode name and a keyword; n8n owns the connection strings, t
 credentials. So the page can sit on any PC, and the worst it can do is ask a question the webhook
 already allows.
 
-- **No SQL in the frontend**, so nobody can craft a query the webhook did not intend.
+- **No SQL on the wire.** The page ships a copy of each statement as *text*, to show you what will
+  run (see the SQL preview below), but it never sends one — the body is a mode name and a keyword,
+  so nobody can craft a query the webhook did not intend by editing the page.
 - **No credentials in the repo** — settings live in `localStorage`, per browser, so there is no
   `.env` and nothing to leak.
 - **Comparisons run in parallel.** The two compare modes fire both queries at once and render when
@@ -116,6 +118,10 @@ Reading it left to right explains the whole contract:
 
 ## Features
 
+- **A read-only SQL preview** of the statement the webhook will run, rebuilt as you type the PO or
+  execution ID. It is the one place the SQL is visible at all — the page still cannot run it, and
+  n8n still owns the real query — but it means a merchandiser can show a DBA exactly what was asked
+  instead of describing it.
 - **Per-column filters** on the wide result sets, with the summary cards recalculating live as you
   filter.
 - **Paste a whole list to filter by** — every filter box in the BotPO summary takes values
@@ -167,11 +173,11 @@ npm install && npm run dev
 
 | | |
 |---|---|
-| **The app** | [`Final Version/`](Final%20Version) — plain JS, 14 modules loaded as ordinary scripts (no bundler, no imports), 12 stylesheets |
+| **The app** | [`Final Version/`](Final%20Version) — plain JS, 14 modules loaded as ordinary scripts (no bundler, no imports), 14 stylesheets |
 | **Dispatch** | [`js/core.js`](Final%20Version/js/core.js) holds the `MODES` table, the `QUERY_TYPES` overrides and `isStagingSearch()` · [`js/query.js`](Final%20Version/js/query.js) runs each mode, including the two parallel compares |
 | **Transport** | [`js/utils.js`](Final%20Version/js/utils.js) — `fetchQuery()` builds the request body, throws on non-2xx, and strips n8n's empty filler row so "no data" doesn't count as one row |
 | **Renderers** | one per shape: results, DBC header+lines, Staging vs AX, Staging vs DBC — modes that share a shape share a renderer, so `find` reuses everything `search` draws, down to the `#search-tbody` its filters target |
-| **React port** | [`po-query-react/`](po-query-react) — React 19 + Vite 8, one component per mode in `src/tabs/`, the shared report windows in `src/reports/` |
+| **React port** | [`po-query-react/`](po-query-react) — React 19 + Vite 8, twelve tab components in `src/tabs/` — thirteen modes, because `search` and `find` share `SearchTab` — and the shared report windows in `src/reports/` |
 
 ---
 

@@ -6,7 +6,9 @@
 
 A purchase-order query dashboard. Every mode posts a JSON body to one **n8n webhook**, which runs the
 matching SQL against MSSQL and returns rows the page renders into a table. The browser holds no
-database credentials and builds no SQL — n8n owns both.
+database credentials and sends no SQL — n8n owns the connection strings and picks the statement
+from the `queryType` it is given. (The page does hold each statement as display text for the SQL
+preview; see **mode.js / sqlPreview**. It is never transmitted.)
 
 Three databases are reachable through it: **Staging**, **AX**, and **DBC**.
 
@@ -53,7 +55,11 @@ Web-To-Query/
 │  │  ├─ export.js             export the current table to .xlsx
 │  │  ├─ history.js            past queries, kept client-side
 │  │  └─ reports.js            full-error popup + the Error / Unit / BotPO summary windows
-│  ├─ css/                  12 stylesheets, one per area + three themes
+│  ├─ css/                  14 stylesheets, one per area + three themes.
+│  │                        depth.css and table-legibility.css are additive and
+│  │                        MUST load last (after space-theme.css) to win on
+│  │                        equal specificity — drop either <link> and the app
+│  │                        returns to its previous look with nothing else edited
 │  └─ Version 1/            an earlier snapshot of this app
 ├─ po-query-react/       React + Vite port, at feature parity
 │  └─ src/reports/index.js  the same reports.js, synced by hand (see Notes)
@@ -322,6 +328,18 @@ carries no credentials at all.
   The React copy is the vanilla one with the four functions taking a `rows` parameter instead of
   reading a global, plus an import and a file-scoped `eslint-disable`. Change a report in one and
   port it to the other, or the two apps drift apart silently — nothing checks this.
+- ⚠️ **`reports.js` is not the only hand-synced pair — the transport layer is one too.**
+  `js/utils.js` and `po-query-react/src/utils.js` both define `getVal()`, `fmt()`, `isBlankRow()` and
+  `fetchQuery()`, and both have to agree about what the webhook's answers *mean*. The React
+  signature differs — it takes `webhook` and `auth` as its first two arguments, since there is no
+  `cfg` global — but the bodies are otherwise the same code twice. The same goes for the dispatch:
+  `js/query.js` and the `runQuery()` chain in `src/App.jsx` decide per mode what to fetch and what to
+  hand the renderer.
+
+  🔑 A bug in how a response is *interpreted* therefore lives in both apps, and fixing one leaves the
+  other broken in a way no test or build catches. The blank-row bug did exactly that: `a790440` fixed
+  `Final Version`, and the React port went on counting `rows: [{}]` as a row until `59d7244`. When you
+  change what `fetchQuery()` returns, or what a mode does with it, **change both or note why not.**
 - ⚠️ **Renaming a tab means editing two places.** The sidebar label lives in `index.html`; the tag
   drawn on the results header lives in the `MODES` table in `js/core.js`. Change one and the app
   calls the same mode two different names. The React port keeps both in `src/constants.js`
